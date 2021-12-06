@@ -12,7 +12,7 @@
 
 <meta name="author" content="Cristian Preda, Quentin Grimonprez" />
 
-<meta name="date" content="2021-02-10" />
+<meta name="date" content="2021-12-06" />
 
 <title>Categorical Functional Data Analysis</title>
 
@@ -28,11 +28,19 @@
     </style>
 
 
-<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  code {
+    white-space: pre;
+  }
+  .sourceCode {
+    overflow: visible;
+  }
+</style>
 <style type="text/css" data-origin="pandoc">
 pre > code.sourceCode { white-space: pre; position: relative; }
 pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
 pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
 code.sourceCode > span { color: inherit; text-decoration: inherit; }
 div.sourceCode { margin: 1em 0; }
 pre.sourceCode { margin: 0; }
@@ -133,10 +141,11 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 
 <h1 class="title toc-ignore">Categorical Functional Data Analysis</h1>
 <h4 class="author">Cristian Preda, Quentin Grimonprez</h4>
-<h4 class="date">2021-02-10</h4>
+<h4 class="date">2021-12-06</h4>
 
 
 
+<p>See <a href="https://www.mdpi.com/2227-7390/9/23/3074" class="uri">https://www.mdpi.com/2227-7390/9/23/3074</a> for more details about the mathematical background and an overview of the package.</p>
 <div id="dataset-simulation" class="section level2">
 <h2>Dataset Simulation</h2>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(cfda)</span>
@@ -295,7 +304,7 @@ C&amp;\alpha&amp;\alpha&amp;\alpha&amp;-3\alpha\\ \hline
 <p>For <span class="math inline">\(t, s \in [0,T_{\max}]\)</span>, the <em>(simple) correspondence analysis</em> looks for <span class="math inline">\(z\)</span> such that it maximizes <span class="math display">\[\displaystyle\frac{1}{2}\left(\eta^{2}(z, X_{t})+\eta^{2}(z, X_{s})\right)\]</span><br />
 and the solution is:</p>
 <p><span class="math display">\[(E^{t}+E^{s})z = \lambda z\]</span> <span class="math inline">\(z\)</span> is called a <em>principal component</em>.</p>
-<p>As an extension, the <em>functional correspondance analysis</em> is defined as the solution of the optimization problem:</p>
+<p>As an extension, the <em>functional correspondence analysis</em> is defined as the solution of the optimization problem:</p>
 <p><span class="math display">\[ \arg\max_{z}\displaystyle\frac{1}{T_{max}}\int_{0}^{T_{max}}\eta^{2}(z, X_{t})dt\]</span> Solution: <span class="math display">\[\int_{0}^{T_{max}}E^{s}z\ ds = \lambda z\]</span></p>
 <p>Denote <span class="math inline">\(\xi_t = E^{t}z\)</span>,</p>
 <p><span class="math display">\[\int_0^{T_{\max}}K(t,s)\xi_s\ ds = \lambda \xi_t, \ \ \ \ \mbox{with}\ K(s,t) = E^tE^s. \]</span></p>
@@ -305,7 +314,7 @@ and the solution is:</p>
 <p>The eigenvalue problem becomes in terms of encodings:</p>
 <p><span class="math display">\[\lambda a_x(t) = \sum_{y\in S}\displaystyle\int_{0}^{T_{\max}}\frac{p_{x,y}(t,s)}{p_x(t)}a_y(s)ds, \ \ \ \ \ \forall x \in S, \forall t\in [0,T_{\max}], \]</span> where<span class="math inline">\(p_{x,y}(t,s) = \mathbb{P}(X_t=x, X_s=y)\)</span> and <span class="math inline">\(p_x(t)= \mathbb{P}(X_t=x)\)</span>.</p>
 <p>Under general conditions (continuity in probability of <span class="math inline">\(X\)</span>), there exists <span class="math inline">\(\{\lambda_i\}_{i\geq1}\)</span> positive eigen-values and <span class="math inline">\(\{a_x^i\}_{i\geq 1}\)</span> eigen-functions.</p>
-<p>The folowing expansion formula holds (Mercer thm.):</p>
+<p>The following expansion formula holds (Mercer thm.):</p>
 <p><span class="math display">\[p_{x,y}(t,s) = p_x(t)p_y(s)\sum_{i\geq 1}\lambda_{i}a^i_x(t)a^i_y(s)\]</span> For <span class="math inline">\(x=y\)</span>, one obtains:</p>
 <p><span class="math display">\[p_x(t) =\displaystyle\frac{1}{\displaystyle\sum_{i\geq 1}\lambda_{i}a^i_x(t)a^i_y(s)}\]</span></p>
 <p>We are interested in approximating the encoding functions, <span class="math inline">\(a_x\)</span>, by</p>
@@ -352,14 +361,14 @@ F_{(x,i), (y,j)} = \int_{0}^{T_{\max}}\phi_i(t)\phi_{j}(t)\mathbf{1}_x\mathbf{1}
 ## 
 ## Principal components:
 ##          [,1]       [,2]       [,3]       [,4]        [,5]       [,6]
-## 1  0.49121450 -0.7761565 -2.2237978  0.8687437  0.20384095  0.4283276
-## 2  0.80112812 -0.9389699 -1.9379884  0.1778935  0.01221841 -0.7867856
-## 3 -4.05767245  0.3735209  0.6378840  0.4504148  0.45332552 -0.7901623
-## 4  0.88436329  0.2856844 -0.7993695 -1.6531371  1.23759838  0.9458713
-## 5  0.76235790 -2.3636970 -1.6430662  0.4241371 -0.56541361 -0.1747624
-## 6 -0.06611053  1.1208777 -1.5759303 -0.5073735 -0.73253829 -1.7198606
+## 1  0.49121450 -0.7761565  2.2237978  0.8687437  0.20384095  0.4283276
+## 2  0.80112812 -0.9389699  1.9379884  0.1778935  0.01221841 -0.7867856
+## 3 -4.05767245  0.3735209 -0.6378840  0.4504148  0.45332552 -0.7901623
+## 4  0.88436329  0.2856844  0.7993695 -1.6531371  1.23759838  0.9458713
+## 5  0.76235790 -2.3636970  1.6430662  0.4241371 -0.56541361 -0.1747624
+## 6 -0.06611053  1.1208777  1.5759303 -0.5073735 -0.73253829 -1.7198606
 ## 
-## Total elapsed time: 47.186 s</code></pre>
+## Total elapsed time: 39.924 s</code></pre>
 <p>By default this function computes bootstrap estimates of the encoding functions in order to have a confidence interval. This is controlled by the <code>computeCI</code> arguments. The output is a list containing the different elements computed during the process: <code>eigenvalues</code>, <code>pc</code>, <code>alpha</code>, <code>F</code>, <code>G</code>, <code>V</code> and <code>basisobj</code>. Note that <code>alpha</code>contains the coefficients of the different encoding functions and <code>pc</code>the principal components. These components can be used with classical statistic methods (k-means, regression…).</p>
 <p>The eigenvalues can be computed using:</p>
 <div class="sourceCode" id="cb29"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plotEigenvalues</span>(fmca, <span class="at">cumulative =</span> <span class="cn">TRUE</span>)</span></code></pre></div>

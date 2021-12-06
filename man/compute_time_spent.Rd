@@ -16,9 +16,9 @@ a matrix with \code{K} columns containing the total time spent in each state for
 For each individual, compute the time spent in each state
 }
 \examples{
-# Simulate the Jukes-Cantor model of nucleotide replacement 
+# Simulate the Jukes-Cantor model of nucleotide replacement
 K <- 4
-PJK <- matrix(1/3, nrow = K, ncol = K) - diag(rep(1/3, K))
+PJK <- matrix(1 / 3, nrow = K, ncol = K) - diag(rep(1 / 3, K))
 lambda_PJK <- c(1, 1, 1, 1)
 d_JK <- generate_Markov(n = 10, K = K, P = PJK, lambda = lambda_PJK, Tmax = 10)
 
@@ -27,7 +27,6 @@ d_JK2 <- cut_data(d_JK, Tmax = 8)
 
 # compute time spent by each id in each state
 timeSpent <- compute_time_spent(d_JK2)
-
 }
 \seealso{
 \link{boxplot.timeSpent}
