@@ -1,4 +1,4 @@
-242618da14ead1945c741b65c9f1ec5a *DESCRIPTION
+0018d83af9eabe5c875ba4957b64db9a *DESCRIPTION
 5953421d6b8a5432c026634e0e191198 *NAMESPACE
 f02037d44c8901d59b78704a0c797f9f *R/bootstrap.R
 345a71fc08a60e5f0de4fbf6fd7f1619 *R/cfd.R
@@ -17,10 +17,10 @@ d945e54573418a758bcdb64d9a19635d *R/stat.R
 c42e4e540d2b3b77a8d478843be30d26 *build/vignette.rds
 db1e9fdc3879e83c6b3a42eb5c241627 *data/biofam2.rda
 435bb5c380a1c0cf0de6d928f129cb4a *data/care.rda
-5bc36a2dce1e077ab485dc4be438ecba *inst/CITATION
+b6bbad119952ea3221e835affdadbea1 *inst/CITATION
 5e5ab4b0f5edf6efaf43a7f43a214282 *inst/doc/cfda.R
 15655ca5525638355527338f29c4ea0a *inst/doc/cfda.Rmd
-1b15691cb5bc72c14a7c837a4b2e8795 *inst/doc/cfda.html
+58573e5e118f44c93796fc9dd8849a2e *inst/doc/cfda.html
 512b9c9f547fe6deba3bcfbf0193d594 *man/biofam2.Rd
 93200de41e3889015f5f9685361cf4fd *man/boxplot.timeSpent.Rd
 e86b03c9e9e6199ff2599aa0c90ae002 *man/care.Rd
