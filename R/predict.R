@@ -45,6 +45,10 @@
 #' @author Quentin Grimonprez
 #' @export
 predict.fmca <- function(object, newdata = NULL, nCores = max(1, ceiling(detectCores() / 2)), verbose = TRUE, ...) {
+  if (is.null(newdata)) {
+    return(object$pc)
+  }
+
   ## check parameters
   checkData(newdata)
   checkLogical(verbose, "verbose")
@@ -62,9 +66,11 @@ predict.fmca <- function(object, newdata = NULL, nCores = max(1, ceiling(detectC
   # change state as integer
   newdata$state <- refactorCategorical(newdata$state, object$label$label, object$label$code)
 
+  uniqueId <- as.character(unique(newdata$id))
+
   K <- length(object$label$label)
 
-  V <- computeVmatrix(newdata, object$basisobj, K, nCores, verbose, ...)
+  V <- computeVmatrix(newdata, object$basisobj, K, uniqueId, nCores, verbose, ...)
 
   invF05vec <- sapply(object$alpha, as.vector)
   invF05vec[is.na(invF05vec)] <- 0

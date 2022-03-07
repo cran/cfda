@@ -12,7 +12,7 @@
 
 <meta name="author" content="Cristian Preda, Quentin Grimonprez" />
 
-<meta name="date" content="2021-12-07" />
+<meta name="date" content="2022-03-07" />
 
 <title>Categorical Functional Data Analysis</title>
 
@@ -26,6 +26,7 @@
   div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
   ul.task-list{list-style: none;}
     </style>
+
 
 
 <style type="text/css">
@@ -141,7 +142,7 @@ code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warni
 
 <h1 class="title toc-ignore">Categorical Functional Data Analysis</h1>
 <h4 class="author">Cristian Preda, Quentin Grimonprez</h4>
-<h4 class="date">2021-12-07</h4>
+<h4 class="date">2022-03-07</h4>
 
 
 
@@ -368,7 +369,7 @@ F_{(x,i), (y,j)} = \int_{0}^{T_{\max}}\phi_i(t)\phi_{j}(t)\mathbf{1}_x\mathbf{1}
 ## 5  0.76235790 -2.3636970  1.6430662  0.4241371 -0.56541361 -0.1747624
 ## 6 -0.06611053  1.1208777  1.5759303 -0.5073735 -0.73253829 -1.7198606
 ## 
-## Total elapsed time: 39.492 s</code></pre>
+## Total elapsed time: 84.861 s</code></pre>
 <p>By default this function computes bootstrap estimates of the encoding functions in order to have a confidence interval. This is controlled by the <code>computeCI</code> arguments. The output is a list containing the different elements computed during the process: <code>eigenvalues</code>, <code>pc</code>, <code>alpha</code>, <code>F</code>, <code>G</code>, <code>V</code> and <code>basisobj</code>. Note that <code>alpha</code>contains the coefficients of the different encoding functions and <code>pc</code>the principal components. These components can be used with classical statistic methods (k-means, regression…).</p>
 <p>The eigenvalues can be computed using:</p>
 <div class="sourceCode" id="cb29"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plotEigenvalues</span>(fmca, <span class="at">cumulative =</span> <span class="cn">TRUE</span>)</span></code></pre></div>
