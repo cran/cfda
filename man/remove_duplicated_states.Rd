@@ -7,7 +7,8 @@
 remove_duplicated_states(data, keep.last = TRUE)
 }
 \arguments{
-\item{data}{data.frame containing \code{id}, id of the trajectory, \code{time}, time at which a change occurs and \code{state}, associated state.}
+\item{data}{data.frame containing \code{id}, id of the trajectory, \code{time}, time at which a change occurs
+and \code{state}, associated state.}
 
 \item{keep.last}{if TRUE, keep the last state for every individual even if it is a duplicated state.}
 }
@@ -15,8 +16,9 @@ remove_duplicated_states(data, keep.last = TRUE)
 \code{data} without duplicated consecutive states
 }
 \description{
-Remove duplicated consecutive states from data. If for an individual there is two or more consecutive states that are identical,
-only the first is kept. Only time when the state changes are kept.
+Remove duplicated consecutive states from data.
+If for an individual there is two or more consecutive states that are identical, only the first is kept.
+Only time when the state changes are kept.
 }
 \examples{
 data <- data.frame(
@@ -25,6 +27,13 @@ data <- data.frame(
 )
 out <- remove_duplicated_states(data)
 }
+\seealso{
+Other format: 
+\code{\link{convertToCfd}()},
+\code{\link{cut_data}()},
+\code{\link{matrixToCfd}()}
+}
 \author{
 Quentin Grimonprez
 }
+\concept{format}

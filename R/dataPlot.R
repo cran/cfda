@@ -1,8 +1,10 @@
 
 #' Plot categorical functional data
 #'
-#' @param data data.frame containing \code{id}, id of the trajectory, \code{time}, time at which a change occurs and \code{state}, associated state.
-#' @param group vector, of the same length as the number individuals of \code{data}, containing group index. Groups are displayed on separate plots.
+#' @param data data.frame containing \code{id}, id of the trajectory, \code{time}, time at which a change occurs and
+#' \code{state}, associated state.
+#' @param group vector, of the same length as the number individuals of \code{data}, containing group index.
+#' Groups are displayed on separate plots.
 #' If \code{group = NA}, the corresponding individuals in \code{data} is ignored.
 #' @param col a vector containing color for each state (can be named)
 #' @param addId If TRUE, add id labels
@@ -41,7 +43,7 @@
 #' group[c(5, 6)] <- NA
 #' plotData(d_JKT, group = group)
 #' @author Cristian Preda, Quentin Grimonprez
-#'
+#' @family Descriptive statistics
 #' @export
 plotData <- function(data, group = NULL, col = NULL, addId = TRUE, addBorder = TRUE, sort = FALSE, nCol = NULL) {
   ## check parameters
@@ -60,8 +62,7 @@ plotData <- function(data, group = NULL, col = NULL, addId = TRUE, addBorder = T
   if (!is.null(group)) {
     data$group <- rep(NA, nrow(data))
     idNames <- unique(data$id)
-    for (i in seq_along(idNames))
-    {
+    for (i in seq_along(idNames)) {
       data$group[data$id == idNames[i]] <- group[i]
     }
     data <- data[!is.na(data$group), ]
@@ -88,10 +89,10 @@ plotData <- function(data, group = NULL, col = NULL, addId = TRUE, addBorder = T
   }
 
   p <- ggplot() +
-    geom_rect(
-      data = d_graph, mapping = aes_string(xmin = "t_start", xmax = "t_end", ymin = "position - 0.5", ymax = "position + 0.5", fill = "state"),
-      color = ifelse(addBorder, "black", NA)
-    ) +
+    geom_rect(data = d_graph,
+              mapping = aes_string(xmin = "t_start", xmax = "t_end", ymin = "position - 0.5",
+                                   ymax = "position + 0.5", fill = "state"),
+              color = ifelse(addBorder, "black", NA)) +
     scale_x_continuous(name = "Time") +
     labs(fill = "State")
 
@@ -101,7 +102,7 @@ plotData <- function(data, group = NULL, col = NULL, addId = TRUE, addBorder = T
 
 
   if (addId) {
-    p <- p + scale_y_continuous(name = "id", breaks = 1:nInd, labels = unique(d_graph$id)[order(unique(d_graph$position))])
+    p <- p + scale_y_continuous(name = "Id", breaks = seq_len(nInd), labels = unique(d_graph$id)[order(unique(d_graph$position))])
   } else {
     p <- p + theme(axis.ticks.y = element_blank(), axis.text.y = element_blank())
   }
@@ -116,26 +117,26 @@ plotData <- function(data, group = NULL, col = NULL, addId = TRUE, addBorder = T
 }
 
 
-# transform the data format to a new format with 4 columns: id, t_stast, t_end, state.
+# transform the data format to a new format with 4 columns: id, t_stat, t_end, state.
 # usefull for ggplot
 # @author Cristian Preda
 rep_large_ind <- function(data) {
   out <- by(data, data$id, function(x) {
     d <- data.frame(
-      id = x$id[1:(nrow(x) - 1)],
-      t_start = x$time[1:(nrow(x) - 1)],
+      id = x$id[seq_len(nrow(x) - 1)],
+      t_start = x$time[seq_len(nrow(x) - 1)],
       t_end = x$time[2:nrow(x)],
-      state = x$state[1:(nrow(x) - 1)], stringsAsFactors = FALSE
+      state = x$state[seq_len(nrow(x) - 1)], stringsAsFactors = FALSE
     )
 
     if ("group" %in% names(data)) {
-      d$group <- x$group[1:(nrow(x) - 1)]
+      d$group <- x$group[seq_len(nrow(x) - 1)]
     }
 
     return(d)
   })
 
-  return(do.call(rbind, out))
+  return(do.call(rbind, out[unique(data$id)]))
 }
 
 
@@ -147,7 +148,7 @@ computePosition <- function(data, id, sort = FALSE) {
     ord <- match(id, b$id)
     position <- ord # position of id on the y-axis
   } else {
-    position <- unclass(factor(id)) # return integers associated with the different ids (labels from a factor)
+    position <- unclass(factor(id, levels = unique(id))) # return integers associated with the different ids (labels from a factor)
   }
 
   return(position)
@@ -176,7 +177,8 @@ computePositionPerGroup <- function(data, id, group, sort = FALSE) {
 # @author Quentin Grimonprez
 orderFirstState <- function(data) {
   firstState <- do.call(rbind, by(data, data$id, function(x) {
-    data.frame(id = x$id[1], time = ifelse(length(x$time) < 2, Inf, x$time[2] - x$time[1]), state = x$state[1], stringsAsFactors = FALSE)
+    data.frame(id = x$id[1], time = ifelse(length(x$time) < 2, Inf, x$time[2] - x$time[1]),
+               state = x$state[1], stringsAsFactors = FALSE)
   }))
   firstStateOrdered <- do.call(rbind, by(firstState, firstState$state, function(x) {
     x[order(x$time), ]
@@ -203,7 +205,8 @@ createLabeller <- function(group) {
 #'
 #' @description Get a summary of the data.frame containing categorical functional data
 #'
-#' @param data data.frame containing \code{id}, id of the trajectory, \code{time}, time at which a change occurs and \code{state}, associated state.
+#' @param data data.frame containing \code{id}, id of the trajectory, \code{time}, time at which a change occurs and
+#' \code{state}, associated state.
 #' @param max.print maximal number of states to display
 #'
 #' @return a list containing:
@@ -221,7 +224,7 @@ createLabeller <- function(group) {
 #' data(biofam2)
 #' summary_cfd(biofam2)
 #' @author Quentin Grimonprez
-#'
+#' @family Descriptive statistics
 #' @export
 summary_cfd <- function(data, max.print = 10) {
   checkData(data)

@@ -15,9 +15,11 @@ plotData(
 )
 }
 \arguments{
-\item{data}{data.frame containing \code{id}, id of the trajectory, \code{time}, time at which a change occurs and \code{state}, associated state.}
+\item{data}{data.frame containing \code{id}, id of the trajectory, \code{time}, time at which a change occurs and
+\code{state}, associated state.}
 
-\item{group}{vector, of the same length as the number individuals of \code{data}, containing group index. Groups are displayed on separate plots.
+\item{group}{vector, of the same length as the number individuals of \code{data}, containing group index.
+Groups are displayed on separate plots.
 If \code{group = NA}, the corresponding individuals in \code{data} is ignored.}
 
 \item{col}{a vector containing color for each state (can be named)}
@@ -65,6 +67,20 @@ plotData(d_JKT, group = group)
 group[c(5, 6)] <- NA
 plotData(d_JKT, group = group)
 }
+\seealso{
+Other Descriptive statistics: 
+\code{\link{boxplot.timeSpent}()},
+\code{\link{compute_duration}()},
+\code{\link{compute_number_jumps}()},
+\code{\link{compute_time_spent}()},
+\code{\link{estimate_pt}()},
+\code{\link{hist.duration}()},
+\code{\link{hist.njump}()},
+\code{\link{plot.pt}()},
+\code{\link{statetable}()},
+\code{\link{summary_cfd}()}
+}
 \author{
 Cristian Preda, Quentin Grimonprez
 }
+\concept{Descriptive statistics}

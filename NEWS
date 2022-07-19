@@ -1,3 +1,9 @@
+v0.10.0 2022-07-19
+- add function to convert quantitative functional to categorial
+- add new parameters for cut_data: prolongLastState, NAstate
+- fix id order in plotData
+- add flours dataset
+
 v0.9.12 2022-03-07
 - fix bug when ids are not in alphabetical order #16
 - add warning when an individual has duplicated time values
@@ -5,7 +11,7 @@ v0.9.12 2022-03-07
 - fix disappeared progress bars
 - predict manages NULL as newdata
 
-v0.9.10 2021-12-07
+v0.9.11 2021-12-07
 - fix DOI
 
 v0.9.10 2021-12-06

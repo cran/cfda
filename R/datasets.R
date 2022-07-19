@@ -1,6 +1,7 @@
 #' Family life states from the Swiss Household Panel biographical survey
 #'
-#' 2000 16 year-long family life sequences built from the retrospective biographical survey carried out by the Swiss Household Panel (SHP) in 2002. Data from \code{TraMineR} package.
+#' 2000 16 year-long family life sequences built from the retrospective biographical survey carried out by the Swiss
+#' Household Panel (SHP) in 2002. Data from \code{TraMineR} package.
 #'
 #' @name biofam2
 #' @aliases biofam2
@@ -18,19 +19,23 @@
 #'
 #'
 #' @details
-#' The biofam2 dataset derives from the biofam dataset from \code{TraMineR} package. The biofam2 format is adapted to \code{cfda} functions.
-#' The biofam data set was constructed by Müller et al. (2007) from the data of the retrospective biographical survey carried out by the Swiss Household Panel (SHP) in 2002.
+#' The biofam2 dataset derives from the biofam dataset from \code{TraMineR} package.
+#' The biofam2 format is adapted to \code{cfda} functions.
+#' The biofam data set was constructed by Müller et al. (2007) from the data of the retrospective biographical survey
+#' carried out by the Swiss Household Panel (SHP) in 2002.
 #' The data set contains sequences of family life states from age 15 to 30 (sequence length is 16).
 #' The sequences are a sample of 2000 sequences of those created from the SHP biographical survey.
 #' It includes only individuals who were at least 30 years old at the time of the survey.
 #' The biofam data set describes family life courses of 2000 individuals born between 1909 and 1972.
 #'
-#' The eight states are defined from the combination of five basic states, namely Living with parents (Parent), Left home (Left), Married (Marr), Having Children (Child), Divorced:
+#' The eight states are defined from the combination of five basic states, namely Living with parents (Parent),
+#' Left home (Left), Married (Marr), Having Children (Child), Divorced:
 #' "Parent", "Left", "Married", "Left+Marr", "Child", "Left+Child", "Left+Marr+Child", "Divorced"
 #'
 #' @source Swiss Household Panel https://forscenter.ch/projects/swiss-household-panel/
 #'
-#' @references Müller, N. S., M. Studer, G. Ritschard (2007). Classification de parcours de vie à l'aide de l'optimal matching. In XIVe Rencontre de la Société francophone de classification (SFC 2007), Paris, 5 - 7 septembre 2007, pp. 157–160.
+#' @references Müller, N. S., M. Studer, G. Ritschard (2007). Classification de parcours de vie à l'aide de l'optimal matching.
+#' In XIVe Rencontre de la Société francophone de classification (SFC 2007), Paris, 5 - 7 septembre 2007, pp. 157–160.
 #'
 #' @examples
 #' data(biofam2)
@@ -46,10 +51,8 @@
 #' plotEigenvalues(fmca, cumulative = TRUE, normalize = TRUE)
 #' plotComponent(fmca, comp = c(1, 2), addNames = FALSE)
 #' }
-#'
+#' @family datasets
 NULL
-
-
 
 
 #' Care trajectories
@@ -110,5 +113,49 @@ NULL
 #' plot(fmca, addCI = TRUE)
 #' plotComponent(fmca, addNames = FALSE)
 #' }
+#'
+#' @family datasets
+NULL
+
+
+#' Flours dataset
+#'
+#' Resistance of dough during the kneading process
+#'
+#' @name flours
+#' @aliases flours
+#' @docType data
+#' @keywords data
+#'
+#' @usage data(flours)
+#'
+#' @format \code{flours} is a list of 3 elements:
+#' \itemize{
+#'   \item \code{data} A matrix of size 241*115 containing the resistance of dough (measured every 2s) during the kneading process. One dough batch = 1 column
+#'   \item \code{quality} Quality of cookies baked with the associated dough (1=Good, 2=Medium, 3=Bad)
+#'   \item \code{time} time values
+#' }
+#'
+#' @examples
+#' data(flours)
+#'
+#' matplot(flours$time, flours$data, col = flours$quality, type = "l", lty = 1)
+#'
+#' # convert to categorical data
+#' flours_cfd <- convertToCfd(flours$data, breaks = c(-Inf, 150, 300, 450, 600, Inf),
+#'                            times = flours$time)
+#'
+#' plotData(flours_cfd, group = flours$quality)
+#'
+#'
+#' # convert to categorical data after projecting in a basis of functions
+#' basis <- create.bspline.basis(c(0, 480), nbasis = 10)
+#' flours_fd <- Data2fd(flours$time, flours$data, basis)
+#' plot(flours_fd)
+#'
+#' flours_cfd2 <- convertToCfd(flours_fd, breaks = c(-Inf, 150, 300, 450, 600, Inf))
+#'
+#' plotData(flours_cfd2, group = flours$quality)
+#' @family datasets
 #'
 NULL

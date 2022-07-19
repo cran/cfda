@@ -1,5 +1,3 @@
-#' @title Print \code{fmca} object
-#'
 #' Print a \code{fmca} object
 #'
 #' @param x \code{fmca} object (see \link{compute_optimal_encoding} function)
@@ -10,8 +8,7 @@
 #'
 #' @method print fmca
 #'
-#' @seealso \link{compute_optimal_encoding} \link{summary.fmca}
-#'
+#' @family encoding functions
 #' @export
 print.fmca <- function(x, n = 6, ...) {
   cat("$basisobj:\n")
@@ -33,8 +30,7 @@ print.fmca <- function(x, n = 6, ...) {
 
 #' @title Object Summaries
 #'
-#' Summary of a \code{fmca} object
-#'
+#' @description Summary of a \code{fmca} object
 #'
 #' @param object \code{fmca} object (see \link{compute_optimal_encoding} function)
 #' @param n maximal number of rows and cols to print
@@ -44,8 +40,7 @@ print.fmca <- function(x, n = 6, ...) {
 #'
 #' @method summary fmca
 #'
-#' @seealso \link{compute_optimal_encoding} \link{print.fmca}
-#'
+#' @family encoding functions
 #' @export
 summary.fmca <- function(object, n = 6, ...) {
   cat("#### FMCA\n\n")
