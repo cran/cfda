@@ -36,7 +36,9 @@ estimate_Markov <- function(data) {
 
   # estimation of the time spent in each state
   T_est <- estimateT(data)
-  lambda_est <- 1 / T_est
+  lambda_est <- rep(NaN, ncol(P_est))
+  names(lambda_est) <- colnames(P_est)
+  lambda_est[names(T_est)] <- 1 / T_est
 
   out <- list(P = P_est, lambda = lambda_est)
   class(out) <- "Markov"
@@ -73,19 +75,11 @@ estimateT <- function(data) {
 # @param aux output of statetable.msm
 # @author Cristian Preda
 completeStatetable <- function(aux) {
-  aux1 <- aux
-  for (i in which(!as.numeric(colnames(aux)) %in% as.numeric(row.names(aux))))
-  {
-    if (i == 1) {
-      aux1 <- rbind(rep(0, ncol(aux)), aux1)
-    } else if (i == ncol(aux)) {
-      aux1 <- rbind(aux1, rep(0, ncol(aux)))
-    } else {
-      aux1 <- rbind(aux1[seq_len(i - 1), ], rep(0, ncol(aux)), aux1[i:nrow(aux1), ])
-    }
-  }
 
-  rownames(aux1) <- colnames(aux)
+  aux1 <- matrix(0, nrow = length(colnames(aux)), ncol = length(colnames(aux)),
+                 dimnames = list(colnames(aux), colnames(aux)))
+
+  aux1[match(rownames(aux), colnames(aux)), ] <- aux
 
   return(aux1)
 }

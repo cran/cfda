@@ -25,11 +25,12 @@
 #' d_JK2 <- cut_data(d_JK, Tmax = 8)
 #' tail(d_JK2)
 #'
+#' # do not prolong any state
 #' try(d_JK2 <- cut_data(d_JK, Tmax = 12, prolongLastState = c()))
 #' @author Cristian Preda
 #' @family format
 #' @export
-cut_data <- function(data, Tmax, prolongLastState = "all", NAstate = "Not observable", warning = FALSE) {
+cut_data <- function(data, Tmax, prolongLastState = "all", NAstate = "Not observed", warning = FALSE) {
   ## check parameters
   checkData(data)
   checkLogical(warning, "warning")
@@ -63,6 +64,9 @@ cut_cfd <- function(data, Tmax, prolongLastState = "all", NAstate = NA, warning 
                        Tmax, ". Please, add more records or change the Tmax value."))
       }
       d <- data
+      if (is.factor(d$state)) {
+        levels(d$state) = c(levels(d$state), NAstate)
+      }
       d$state[l] <- NAstate
       return(rbind(d, data.frame(id = data$id[1], state = NAstate, time = Tmax)))
     }

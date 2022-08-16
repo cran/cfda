@@ -12,7 +12,7 @@
 
 <meta name="author" content="Cristian Preda, Quentin Grimonprez" />
 
-<meta name="date" content="2022-07-19" />
+<meta name="date" content="2022-08-16" />
 
 <title>Categorical Functional Data Analysis</title>
 
@@ -334,7 +334,7 @@ code > span.er { color: #a61717; background-color: #e3d2d2; }
 
 <h1 class="title toc-ignore">Categorical Functional Data Analysis</h1>
 <h4 class="author">Cristian Preda, Quentin Grimonprez</h4>
-<h4 class="date">2022-07-19</h4>
+<h4 class="date">2022-08-16</h4>
 
 
 
@@ -478,24 +478,22 @@ can be plotted:</p>
 frequency table counting the number of times each pair of states were
 observed in successive observation times.</p>
 <div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">statetable</span>(d_JK)</span></code></pre></div>
-<pre><code>##     to
-## from   A   C   G   T
-##    A   0 110  85 105
-##    C  71   0  84  78
-##    G  72  65   0  78
-##    T  86  81  67   0</code></pre>
+<pre><code>##    A   C  G   T
+## A  0 110 85 105
+## C 71   0 84  78
+## G 72  65  0  78
+## T 86  81 67   0</code></pre>
 <p>Assuming that the data follows a Markov process, parameters <span class="math inline">\(P\)</span> (transition probability matrix) and
 <span class="math inline">\(\lambda\)</span> of the process can be
 estimated.</p>
 <div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>mark <span class="ot">&lt;-</span> <span class="fu">estimate_Markov</span>(d_JK)</span>
 <span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>mark</span></code></pre></div>
 <pre><code>## $P
-##     to
-## from         A         C         G         T
-##    A 0.0000000 0.3666667 0.2833333 0.3500000
-##    C 0.3047210 0.0000000 0.3605150 0.3347639
-##    G 0.3348837 0.3023256 0.0000000 0.3627907
-##    T 0.3675214 0.3461538 0.2863248 0.0000000
+##           A         C         G         T
+## A 0.0000000 0.3666667 0.2833333 0.3500000
+## C 0.3047210 0.0000000 0.3605150 0.3347639
+## G 0.3348837 0.3023256 0.0000000 0.3627907
+## T 0.3675214 0.3461538 0.2863248 0.0000000
 ## 
 ## $lambda
 ##        A        C        G        T 
@@ -637,7 +635,7 @@ basis of order 4.</p>
 ## 5  0.76235790 -2.3636970  1.6430662  0.4241371 -0.56541361 -0.1747624
 ## 6 -0.06611053  1.1208777  1.5759303 -0.5073735 -0.73253829 -1.7198606
 ## 
-## Total elapsed time: 19.801 s</code></pre>
+## Total elapsed time: 19.112 s</code></pre>
 <p>By default this function computes bootstrap estimates of the encoding
 functions in order to have a confidence interval. This is controlled by
 the <code>computeCI</code> arguments. The output is a list containing
