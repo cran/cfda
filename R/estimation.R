@@ -1,11 +1,14 @@
 
 #' Estimate transition matrix and spent time
 #'
-#' Calculates crude initial values for transition intensities by assuming that the data represent the exact transition times of the Markov process.
+#' Calculates crude initial values for transition intensities by assuming that the data represent the exact transition
+#' times of the Markov process.
 #'
-#' @param data data.frame containing \code{id}, id of the trajectory, \code{time}, time at which a change occurs and \code{state}, associated state.
+#' @param data data.frame containing \code{id}, id of the trajectory, \code{time}, time at which a change occurs and
+#' \code{state}, associated state.
 #'
-#' @return list of two elements: \code{Q}, the estimated transition matrix, and \code{lambda}, the estimated time spent in each state
+#' @return list of two elements: \code{Q}, the estimated transition matrix, and \code{lambda},
+#' the estimated time spent in each state
 #'
 #'
 #' @examples
@@ -29,7 +32,7 @@ estimate_Markov <- function(data) {
   checkData(data)
   ## end check
 
-  # il faut supprimer les sauts dans les mêmes états
+  # we must delete the jumps from a state to the itself
   data <- remove_duplicated_states(data, keep.last = TRUE)
 
   P_est <- prop.table(statetable(data, removeDiagonal = TRUE), margin = 1)
@@ -49,7 +52,8 @@ estimate_Markov <- function(data) {
 
 # estimate the mean time spent in each state
 #
-# @param data data.frame containing \code{id}, id of the trajectory, \code{time}, time at which a change occurs and \code{state}, associated state.
+# @param data data.frame containing \code{id}, id of the trajectory, \code{time}, time at which a change occurs and
+# \code{state}, associated state.
 #
 estimateT <- function(data) {
   tSpentInState <- by(
@@ -69,7 +73,7 @@ estimateT <- function(data) {
 
 
 
-# identifier les etats d'ou on part jamais dans [0,T] (absorbants ou pas)
+# identifier les états d'où on part jamais dans [0,T] (absorbants ou pas)
 # add row (containing 0s) for the missing state
 #
 # @param aux output of statetable.msm

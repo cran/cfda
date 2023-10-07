@@ -1,20 +1,24 @@
 #' Generate Markov Trajectories
 #'
-#' Simulate individuals from a Markov process defined by a transition matrix, time spent in each time and initial probabilities.
+#' Simulate individuals from a Markov process defined by a transition matrix,
+#' time spent in each time and initial probabilities.
 #'
 #' @param n number of trajectories to generate
 #' @param K number of states
-#' @param P matrix containing the transition probabilities from one state to another. Each row contains positive reals summing to 1.
+#' @param P matrix containing the transition probabilities from one state to another.
+#' Each row contains positive reals summing to 1.
 #' @param lambda time spent in each state
 #' @param pi0 initial distribution of states
 #' @param Tmax maximal duration of trajectories
 #' @param labels state names. If \code{NULL}, integers are used
 #'
 #' @return
-#' a data.frame with 3 columns: \code{id}, id of the trajectory, \code{time}, time at which a change occurs and \code{state}, new state.
+#' a data.frame with 3 columns: \code{id}, id of the trajectory, \code{time},
+#' time at which a change occurs and \code{state}, new state.
 #'
 #' @details
-#' For one individual, assuming the current state is \eqn{s_j} at time \eqn{t_j}, the next state and time is simulated as follows:
+#' For one individual, assuming the current state is \eqn{s_j} at time \eqn{t_j},
+#' the next state and time is simulated as follows:
 #' \enumerate{
 #' \item generate one sample, \eqn{d}, of an exponential law of parameter \code{lambda[s_j]}
 #' \item define the next time values as: \eqn{t_{j+1} = t_j + d}
@@ -36,8 +40,34 @@
 #' @author Cristian Preda
 #'
 #' @export
-generate_Markov <- function(n = 5, K = 2, P = (1 - diag(K)) / (K - 1), lambda = rep(1, K), pi0 = c(1, rep(0, K - 1)), Tmax = 1, labels = NULL) {
-  ## check parameters
+generate_Markov <- function(n = 5, K = 2, P = (1 - diag(K)) / (K - 1), lambda = rep(1, K),
+                            pi0 = c(1, rep(0, K - 1)), Tmax = 1, labels = NULL) {
+
+  check_generate_Markov_parameters(n, K, Tmax, P, lambda, pi0, labels)
+
+  d <- data.frame(id = numeric(0), time = numeric(0), state = numeric(0))
+
+  for (i in seq_len(n)) {
+    e <- sample(K, 1, prob = pi0)
+    t <- 0
+    while (t <= Tmax) {
+      d <- rbind(d, data.frame(id = i, time = t, state = e))
+      sej <- rexp(1, lambda[e])
+      t <- t + sej
+      e <- sample(K, 1, prob = P[e, ])
+    }
+  }
+
+  if (!is.null(labels)) {
+    d$state <- labels[d$state]
+  }
+
+  row.names(d) <- NULL
+
+  return(d)
+}
+
+check_generate_Markov_parameters <- function(n, K, Tmax, P, lambda, pi0, labels) {
   if (any(is.na(n)) || (length(n) != 1) || !is.whole.number(n)) {
     stop("n must be a positive integer.")
   }
@@ -61,40 +91,18 @@ generate_Markov <- function(n = 5, K = 2, P = (1 - diag(K)) / (K - 1), lambda = 
       stop("labels must be NULL or a vector of length K.")
     }
   }
-  ## end check
-
-
-  d <- data.frame(id = numeric(0), time = numeric(0), state = numeric(0))
-
-  for (i in seq_len(n))
-  {
-    e <- sample(K, 1, prob = pi0)
-    t <- 0
-    while (t <= Tmax) {
-      d <- rbind(d, data.frame(id = i, time = t, state = e))
-      sej <- rexp(1, lambda[e])
-      t <- t + sej
-      e <- sample(K, 1, prob = P[e, ])
-    }
-  }
-
-  if (!is.null(labels)) {
-    d$state <- labels[d$state]
-  }
-
-  row.names(d) <- NULL
-
-  return(d)
 }
 
 #' Generate data following a 2 states model
 #'
-#' Generate individuals such that each individual starts at time 0 with state 0 and then an unique change to state 1 occurs at a time \eqn{t} generated using an uniform law between 0 and 1.
+#' Generate individuals such that each individual starts at time 0 with state 0 and then an unique change
+#' to state 1 occurs at a time \eqn{t} generated using an uniform law between 0 and 1.
 #'
 #' @param n number of individuals
 #'
 #' @return
-#' a data.frame with 3 columns: \code{id}, id of the trajectory, \code{time}, time at which a change occurs and \code{state}, new state.
+#' a data.frame with 3 columns: \code{id}, id of the trajectory, \code{time}, time at which a change occurs and
+#' \code{state}, new state.
 #'
 #' @author Cristian Preda, Quentin Grimonprez
 #'

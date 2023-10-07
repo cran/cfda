@@ -17,15 +17,15 @@ test_that("compute_Uxij works with a simple basis of 1 function", {
   set.seed(42)
 
   m <- 1
-  b <- create.bspline.basis(c(0, Tmax), nbasis = m, norder = 1) # base d'une seule fonction avec fonction constante = 1 entre 0 et Tmax
+  # basis with 1 function: constant function = 1 between 0 and T max
+  b <- create.bspline.basis(c(0, Tmax), nbasis = m, norder = 1)
   I <- diag(rep(1, m))
-  phi <- fd(I, b) # fonction constante = 1 entre 0 et Tmax
+  phi <- fd(I, b) # constant function = 1 between 0 and T max
 
   x <- d_JK2[d_JK2$id == 1, ]
   out <- compute_Uxij(x, phi, K)
   expectedOut <- rep(0, K)
-  for (i in 1:K)
-  {
+  for (i in 1:K) {
     idx <- which(x$state == i)
     expectedOut[i] <- sum(x$time[idx + 1] - x$time[idx], na.rm = TRUE)
   }
@@ -38,15 +38,70 @@ test_that("compute_Uxij works with a simple basis of 1 function", {
 test_that("compute_Uxij works with a simple basis of 2 functions", {
   skip_on_cran()
   m <- 2
-  b <- create.bspline.basis(c(0, Tmax), nbasis = m, norder = 1) # base de deux fonctions:  constante = 1 entre 0 et Tmax/2 puis 0 et réciproquement
+  # basis with 2 functions: 1st function: constant = 1 between 0 and Tmax/2 then 0. 2nd function: 0 then 1
   I <- diag(rep(1, m))
+  b <- create.bspline.basis(c(0, Tmax), nbasis = m, norder = 1)
   phi <- fd(I, b)
 
   x <- d_JK2[d_JK2$id == 1, ]
   out <- compute_Uxij(x, phi, K)
   expectedOut <- rep(0, K * m * m)
-  for (i in 1:K)
-  {
+  for (i in 1:K) {
+    idx <- which(x$state == i)
+    idx1 <- idx[x$time[idx] <= 5]
+    expectedOut[1 + (i - 1) * m * m] <- sum(pmin(x$time[idx1 + 1], 5) - x$time[idx1], na.rm = TRUE)
+
+    idx2 <- idx[x$time[idx + 1] > 5]
+    expectedOut[4 + (i - 1) * m * m] <- sum(x$time[idx2 + 1] - pmax(x$time[idx2], 5), na.rm = TRUE)
+  }
+
+  expect_length(out, K * m * m)
+  expect_lte(max(abs(out - expectedOut)), 1e-5)
+})
+
+test_that("compute_integral_U + fillU works with a simple basis of 1 function", {
+  set.seed(42)
+
+  m <- 1
+  # basis with 1 function: constant function = 1 between 0 and T max
+  b <- create.bspline.basis(c(0, Tmax), nbasis = m, norder = 1)
+  I <- diag(rep(1, m))
+  phi <- fd(I, b) # constant function = 1 between 0 and T max
+  x <- d_JK2[d_JK2$id == 1, ]
+
+  uniqueTime <- sort(unique(d_JK2$time))
+  index <- data.frame(seq_along(uniqueTime), row.names = uniqueTime)
+  integrals <- compute_integral_U(phi, uniqueTime, verbose = FALSE)
+  out <- fill_U(x, integrals, index, K, m)
+
+  expectedOut <- rep(0, K)
+  for (i in 1:K) {
+    idx <- which(x$state == i)
+    expectedOut[i] <- sum(x$time[idx + 1] - x$time[idx], na.rm = TRUE)
+  }
+
+  expect_length(out, K * m * m)
+  expect_equal(out, expectedOut)
+})
+
+
+test_that("compute_integral_U + fillU works with a simple basis of 2 functions", {
+  skip_on_cran()
+  m <- 2
+  # basis with 2 functions: 1st function: constant = 1 between 0 and Tmax/2 then 0. 2nd function: 0 then 1
+  I <- diag(rep(1, m))
+  b <- create.bspline.basis(c(0, Tmax), nbasis = m, norder = 1)
+  phi <- fd(I, b)
+
+  x <- d_JK2[d_JK2$id == 1, ]
+
+  uniqueTime <- sort(unique(d_JK2$time))
+  index <- data.frame(seq_along(uniqueTime), row.names = uniqueTime)
+  integrals <- compute_integral_U(phi, uniqueTime, verbose = FALSE)
+  out <- fill_U(x, integrals, index, K, m)
+
+  expectedOut <- rep(0, K * m * m)
+  for (i in 1:K) {
     idx <- which(x$state == i)
     idx1 <- idx[x$time[idx] <= 5]
     expectedOut[1 + (i - 1) * m * m] <- sum(pmin(x$time[idx1 + 1], 5) - x$time[idx1], na.rm = TRUE)
@@ -63,17 +118,14 @@ oldcompute_Uxij <- function(x, phi, K) {
   nBasis <- phi$basis$nbasis
   aux <- rep(0, K * nBasis * nBasis)
 
-  for (state in 1:K)
-  {
+  for (state in 1:K) {
     idx <- which(x$state == state)
-    for (u in idx)
-    {
-      for (i in 1:nBasis)
-      {
-        for (j in 1:nBasis)
-        {
+    for (u in idx) {
+      for (i in 1:nBasis) {
+        for (j in 1:nBasis) {
           if (u < nrow(x)) {
-            aux[(state - 1) * nBasis * nBasis + (i - 1) * nBasis + j] <- aux[(state - 1) * nBasis * nBasis + (i - 1) * nBasis + j] +
+            ind <- (state - 1) * nBasis * nBasis + (i - 1) * nBasis + j
+            aux[ind] <- aux[ind] +
               integrate(function(t) {
                 eval.fd(t, phi[i]) * eval.fd(t, phi[j])
               },
@@ -112,19 +164,18 @@ test_that("refactor of compute_Uxij keeps the same results", {
 
 test_that("compute_Vxi works with a simple basis of 1 function", {
   m <- 1
-  b <- create.bspline.basis(c(0, Tmax), nbasis = m, norder = 1) # base d'une seule fonction avec fonction constante = 1 entre 0 et Tmax
+  # basis with 1 function:: constant function = 1 between 0 and T max
+  b <- create.bspline.basis(c(0, Tmax), nbasis = m, norder = 1)
   I <- diag(rep(1, m))
-  phi <- fd(I, b) # fonction constante = 1 entre 0 et Tmax
+  phi <- fd(I, b) # constant function = 1 between 0 and T max
 
   x <- d_JK2[d_JK2$id == 1, ]
   out <- compute_Vxi(x, phi, K)
   expectedOut <- rep(0, K)
-  for (i in 1:K)
-  {
+  for (i in 1:K) {
     idx <- which(x$state == i)
     expectedOut[i] <- sum(x$time[idx + 1] - x$time[idx], na.rm = TRUE)
   }
-
 
   expect_length(out, K * m)
   expect_equal(out, expectedOut)
@@ -135,15 +186,15 @@ test_that("compute_Vxi works with a simple basis of 1 function", {
 test_that("compute_Vxi works with a simple basis of 2 functions", {
   skip_on_cran()
   m <- 2
-  b <- create.bspline.basis(c(0, Tmax), nbasis = m, norder = 1) # base de deux fonctions:  constante = 1 entre 0 et Tmax/2 puis 0 et réciproquement
+  # basis with 2 functions: 1st function: constant = 1 between 0 and Tmax/2 then 0. 2nd function: 0 then 1
+  b <- create.bspline.basis(c(0, Tmax), nbasis = m, norder = 1)
   I <- diag(rep(1, m))
   phi <- fd(I, b)
 
   x <- d_JK2[d_JK2$id == 1, ]
   out <- compute_Vxi(x, phi, K)
   expectedOut <- rep(0, K * m)
-  for (i in 1:K)
-  {
+  for (i in 1:K) {
     idx <- which(x$state == i)
     idx1 <- idx[x$time[idx] <= 5]
     expectedOut[1 + (i - 1) * m] <- sum(pmin(x$time[idx1 + 1], 5) - x$time[idx1], na.rm = TRUE)
@@ -155,6 +206,60 @@ test_that("compute_Vxi works with a simple basis of 2 functions", {
   expect_length(out, K * m)
   expect_lte(max(abs(out - expectedOut)), 1e-5)
 })
+
+test_that("compute_integral_V + fillV works with a simple basis of 1 function", {
+  m <- 1
+  # basis with 1 function:: constant function = 1 between 0 and T max
+  b <- create.bspline.basis(c(0, Tmax), nbasis = m, norder = 1)
+  I <- diag(rep(1, m))
+  phi <- fd(I, b) # constant function = 1 between 0 and T max
+
+  x <- d_JK2[d_JK2$id == 1, ]
+
+  uniqueTime <- sort(unique(d_JK2$time))
+  index <- data.frame(seq_along(uniqueTime), row.names = uniqueTime)
+  integrals <- compute_integral_V(phi, uniqueTime, verbose = FALSE)
+  out <- fill_V(x, integrals, index, K, m)
+
+  expectedOut <- rep(0, K)
+  for (i in 1:K) {
+    idx <- which(x$state == i)
+    expectedOut[i] <- sum(x$time[idx + 1] - x$time[idx], na.rm = TRUE)
+  }
+
+  expect_length(out, K * m)
+  expect_equal(out, expectedOut)
+})
+
+test_that("compute_integral_V + fillV works with a simple basis of 2 functions", {
+  skip_on_cran()
+  m <- 2
+  # basis with 2 functions: 1st function: constant = 1 between 0 and Tmax/2 then 0. 2nd function: 0 then 1
+  b <- create.bspline.basis(c(0, Tmax), nbasis = m, norder = 1)
+  I <- diag(rep(1, m))
+  phi <- fd(I, b)
+
+  x <- d_JK2[d_JK2$id == 1, ]
+
+  uniqueTime <- sort(unique(d_JK2$time))
+  index <- data.frame(seq_along(uniqueTime), row.names = uniqueTime)
+  integrals <- compute_integral_V(phi, uniqueTime, verbose = FALSE)
+  out <- fill_V(x, integrals, index, K, m)
+
+  expectedOut <- rep(0, K * m)
+  for (i in 1:K) {
+    idx <- which(x$state == i)
+    idx1 <- idx[x$time[idx] <= 5]
+    expectedOut[1 + (i - 1) * m] <- sum(pmin(x$time[idx1 + 1], 5) - x$time[idx1], na.rm = TRUE)
+
+    idx2 <- idx[x$time[idx + 1] > 5]
+    expectedOut[2 + (i - 1) * m] <- sum(x$time[idx2 + 1] - pmax(x$time[idx2], 5), na.rm = TRUE)
+  }
+
+  expect_length(out, K * m)
+  expect_lte(max(abs(out - expectedOut)), 1e-5)
+})
+
 
 test_that("computeVmatrix keeps the id order", {
   all_dat_P1S1 <- data.frame(state = c(1, 2, 1), time = c(0, 0.5, 1), id = rep("P1S1", 3))
@@ -253,7 +358,7 @@ test_that("compute_optimal_encoding works", {
   row.names(dT) <- NULL
 
   b <- create.bspline.basis(c(0, Tmax), nbasis = m, norder = 4)
-  expect_silent(fmca <- compute_optimal_encoding(dT, b, computeCI = FALSE, nCores = 1, verbose = FALSE))
+  expect_silent(fmca <- compute_optimal_encoding(dT, b, computeCI = FALSE, method = "parallel", nCores = 1, verbose = FALSE))
 
   expect_type(fmca, "list")
   expect_named(fmca, c("eigenvalues", "alpha", "pc", "F", "G", "V", "basisobj", "label", "pt", "runTime"))
@@ -300,7 +405,7 @@ dT <- cut_data(d, Tmax)
 row.names(dT) <- NULL
 
 b <- create.bspline.basis(c(0, Tmax), nbasis = m, norder = 4)
-fmca <- compute_optimal_encoding(dT, b, nCores = 1, computeCI = FALSE, verbose = FALSE)
+fmca <- compute_optimal_encoding(dT, b, method = "parallel", nCores = 1, computeCI = FALSE, verbose = FALSE)
 ##
 
 test_that("summary.cfda does not produce warnings/errors", {
@@ -323,11 +428,14 @@ test_that("compute_optimal_encoding throws a warning when the basis is not well 
   data_msm <- data.frame(id = rep(1:2, each = 3), time = c(0, 3, 5, 0, 4, 5), state = c(1, 2, 2, 1, 2, 2))
   b <- create.bspline.basis(c(0, 5), nbasis = 3, norder = 2)
 
-  expect_warning(
-    {
+  expect_warning({
       fmca <- compute_optimal_encoding(data_msm, b, computeCI = FALSE, nCores = 1)
     },
-    regexp = "The F matrix contains at least one column of 0s. At least one state is not present in the support of one basis function. Corresponding coefficients in the alpha output will have a 0 value.",
+    regexp = paste(
+      "The F matrix contains at least one column of 0s.",
+      "At least one state is not present in the support of one basis function.",
+      "Corresponding coefficients in the alpha output will have a 0 value."
+    ),
     fixed = TRUE
   )
 })

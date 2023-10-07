@@ -10,8 +10,10 @@
 #' @param computeCI if TRUE, perform a bootstrap to estimate the variance of encoding functions coefficients
 #' @param nBootstrap number of bootstrap samples
 #' @param propBootstrap size of bootstrap samples relative to the number of individuals: propBootstrap * number of individuals
-#' @param nCores number of cores used for parallelization. Default is the half of cores.
+#' @param method computation method: "parallel" or "precompute": precompute all integrals
+#' (efficient when the number of unique time values is low)
 #' @param verbose if TRUE print some information
+#' @param nCores number of cores used for parallelization (only if method == "parallel"). Default is half the cores.
 #' @param ... parameters for \code{\link{integrate}} function (see details).
 #'
 #' @return A list containing:
@@ -86,31 +88,15 @@
 #' @family encoding functions
 #'
 #' @export
-compute_optimal_encoding <- function(data, basisobj, computeCI = TRUE, nBootstrap = 50, propBootstrap = 1,
-                                     nCores = max(1, ceiling(detectCores() / 2)), verbose = TRUE, ...) {
+compute_optimal_encoding <- function(
+  data, basisobj, computeCI = TRUE, nBootstrap = 50, propBootstrap = 1, method = c("precompute", "parallel"),
+  verbose = TRUE, nCores = max(1, ceiling(detectCores() / 2)),  ...) {
   t1 <- proc.time()
-  ## check parameters
-  checkData(data)
-  checkDataBeginTime(data)
-  checkDataEndTmax(data)
-  checkDataNoDuplicatedTimes(data)
 
-  if (!is.basis(basisobj)) {
-    stop("basisobj is not a basis object.")
-  }
-  if (any(is.na(nCores)) || !is.whole.number(nCores) || (nCores < 1)) {
-    stop("nCores must be an integer > 0.")
-  }
-  checkLogical(verbose, "verbose")
-  checkLogical(computeCI, "computeCI")
-  if (computeCI) {
-    if (any(is.na(nBootstrap)) || (length(nBootstrap) != 1) || !is.whole.number(nBootstrap) || (nBootstrap < 1)) {
-      stop("nBootstrap must be an integer > 0.")
-    }
-    if (any(is.na(propBootstrap)) || !is.numeric(propBootstrap) || (length(propBootstrap) != 1) || (propBootstrap > 1) || (propBootstrap <= 0)) {
-      stop("propBootstrap must be a real between 0 and 1.")
-    }
-  }
+  ## check parameters
+  check_compute_optimal_encoding_parameters(data, basisobj, nCores, verbose, computeCI, nBootstrap, propBootstrap)
+  method <- match.arg(method)
+  nCores <- min(max(1, nCores), detectCores() - 1)
   ## end check
 
   # used to determine the moments where the probability is 0 in plot.fmca
@@ -129,10 +115,6 @@ compute_optimal_encoding <- function(data, basisobj, computeCI = TRUE, nBootstra
 
   uniqueId <- as.character(unique(data$id))
   nId <- length(uniqueId)
-
-  nCores <- min(max(1, nCores), detectCores() - 1)
-
-  Tmax <- max(data$time)
   K <- length(label$label)
   nBasis <- basisobj$nbasis
 
@@ -144,10 +126,17 @@ compute_optimal_encoding <- function(data, basisobj, computeCI = TRUE, nBootstra
     cat(paste0("Number of cores: ", nCores, "\n"))
   }
 
+  if (method == "precompute") {
+    uniqueTime <- sort(unique(data$time))
 
-  V <- computeVmatrix(data, basisobj, K, uniqueId, nCores, verbose, ...)
+    V <- computeVmatrix2(data, basisobj, K, uniqueId, uniqueTime, nCores, verbose, ...)
 
-  Uval <- computeUmatrix(data, basisobj, K, uniqueId, nCores, verbose, ...)
+    Uval <- computeUmatrix2(data, basisobj, K, uniqueId, uniqueTime, nCores, verbose, ...)
+  } else {
+    V <- computeVmatrix(data, basisobj, K, uniqueId, nCores, verbose, ...)
+
+    Uval <- computeUmatrix(data, basisobj, K, uniqueId, nCores, verbose, ...)
+  }
 
   fullEncoding <- computeEncoding(Uval, V, K, nBasis, uniqueId, label, verbose, manage0 = TRUE)
 
@@ -179,13 +168,36 @@ compute_optimal_encoding <- function(data, basisobj, computeCI = TRUE, nBootstra
   return(out)
 }
 
+check_compute_optimal_encoding_parameters <- function(data, basisobj, nCores, verbose, computeCI, nBootstrap, propBootstrap) {
+  checkData(data)
+  checkDataBeginTime(data)
+  checkDataEndTmax(data)
+  checkDataNoDuplicatedTimes(data)
 
+  if (!is.basis(basisobj)) {
+    stop("basisobj is not a basis object.")
+  }
+  if (any(is.na(nCores)) || !is.whole.number(nCores) || (nCores < 1)) {
+    stop("nCores must be an integer > 0.")
+  }
+  checkLogical(verbose, "verbose")
+  checkLogical(computeCI, "computeCI")
+  if (computeCI) {
+    if (any(is.na(nBootstrap)) || (length(nBootstrap) != 1) || !is.whole.number(nBootstrap) || (nBootstrap < 1)) {
+      stop("nBootstrap must be an integer > 0.")
+    }
+    if (any(is.na(propBootstrap)) || !is.numeric(propBootstrap) || (length(propBootstrap) != 1) || (propBootstrap > 1) || (
+      propBootstrap <= 0)) {
+      stop("propBootstrap must be a real between 0 and 1.")
+    }
+  }
+}
 
 # return a matrix with nId rows and nBasis * nState columns
 computeVmatrix <- function(data, basisobj, K, uniqueId, nCores, verbose, ...) {
   nBasis <- basisobj$nbasis
 
-  phi <- fd(diag(nBasis), basisobj) # les fonctions de base comme données fonctionnelles
+  phi <- fd(diag(nBasis), basisobj) # basis function as functional data
 
   # declare parallelization
   if (nCores > 1) {
@@ -204,8 +216,8 @@ computeVmatrix <- function(data, basisobj, K, uniqueId, nCores, verbose, ...) {
   t2 <- proc.time()
 
 
-  # on construit les variables V_ij = int(0,T){phi_j(t)*1_X(t)=i} dt
-  V <- do.call(rbind, pblapply(cl = cl, split(data, data$id), compute_Vxi, phi = phi, K = K)[uniqueId])
+  # we compute V_ij = int(0,T){phi_j(t)*1_X(t)=i} dt
+  V <- do.call(rbind, pblapply(cl = cl, split(data, data$id), compute_Vxi, phi = phi, K = K, ...)[uniqueId])
   rownames(V) <- NULL
 
   t3 <- proc.time()
@@ -223,7 +235,8 @@ computeVmatrix <- function(data, basisobj, K, uniqueId, nCores, verbose, ...) {
 }
 
 
-# compute_Vxi  (plutot Vxj = \int_0^Tphi_j(t)X_t=x dt
+
+# compute_Vxi  (Vxi = \int_0^Tphi_i(t)X_t=x dt)
 #
 # @param x one individual (id, time, state)
 # @param phi basis functions (e.g. output of \code{\link{fd}} on a \code{\link{create.bspline.basis}} output)
@@ -252,18 +265,18 @@ compute_Vxi <- function(x, phi, K, ...) {
   nBasis <- phi$basis$nbasis
   aux <- rep(0, K * nBasis) # V11, V12,...V1m, V21, V22, ..., V2m, ... etc VK1... VKm
 
-  for (u in seq_len(nrow(x) - 1))
-  {
+  for (u in seq_len(nrow(x) - 1)) {
     state <- x$state[u]
 
-    for (j in seq_len(nBasis)) # j = la base
-    {
-      aux[(state - 1) * nBasis + j] <- aux[(state - 1) * nBasis + j] +
-        integrate(function(t) {
-          eval.fd(t, phi[j])
-        },
-        lower = x$time[u], upper = x$time[u + 1],
-        stop.on.error = FALSE, ...
+    for (j in seq_len(nBasis)) { # j = la base
+      ind <- (state - 1) * nBasis + j
+      aux[ind] <- aux[ind] +
+        integrate(
+          function(t) {
+            eval.fd(t, phi[j])
+          },
+          lower = x$time[u], upper = x$time[u + 1],
+          stop.on.error = FALSE, ...
         )$value
     }
   }
@@ -271,11 +284,92 @@ compute_Vxi <- function(x, phi, K, ...) {
   return(aux)
 }
 
+
+# return a matrix with nId rows and nBasis * nState columns
+computeVmatrix2 <- function(data, basisobj, K, uniqueId, uniqueTime, nCores, verbose, ...) {
+  nBasis <- basisobj$nbasis
+
+  phi <- fd(diag(nBasis), basisobj) # basis function as functional data
+
+  t2 <- proc.time()
+
+  index <- data.frame(seq_along(uniqueTime), row.names = uniqueTime)
+
+  # V_ij = int(0,T){phi_j(t)*1_X(t)=i} dt
+  integrals <- compute_integral_V(phi, uniqueTime, verbose)
+  # V <- do.call(
+  #   rbind,
+  #   pblapply(cl = cl, split(data, data$id), fill_V, integrals = integrals, index = index, K = K, nBasis = nBasis)[uniqueId]
+  # )
+  V <- do.call(
+    rbind,
+    lapply(split(data, data$id), fill_V, integrals = integrals, index = index, K = K, nBasis = nBasis)[uniqueId]
+  )
+  rownames(V) <- NULL
+
+  # V <- do.call(rbind, pblapply(cl = cl, split(data, data$id), compute_Vxi, phi = phi, K = K, ...)[uniqueId])
+  # rownames(V) <- NULL
+
+  t3 <- proc.time()
+
+  if (verbose) {
+    cat(paste0("\nDONE in ", round((t3 - t2)[3], 2), "s\n"))
+  }
+
+  return(V)
+}
+
+
+compute_integral_V <- function(phi, uniqueTime, verbose, ...) {
+  nBasis <- phi$basis$nbasis
+  if (verbose) {
+    pb <- timerProgressBar(min = 0, max = nBasis, width = 50)
+    on.exit(close(pb))
+    jj <- 1
+  }
+  integrals <- list()
+  for (i in seq_len(nBasis)) { # TODO parallel
+    integrals[[i]] <- rep(0., length(uniqueTime))
+    for (ii in seq_len(length(uniqueTime) - 1)) {
+      integrals[[i]][ii] <- integrate(
+        function(t) {
+          eval.fd(t, phi[i])
+        },
+        lower = uniqueTime[ii], upper = uniqueTime[ii + 1],
+        stop.on.error = FALSE, ...
+      )$value
+    }
+    if (verbose) {
+      setTimerProgressBar(pb, jj)
+      jj <- jj + 1
+    }
+  }
+
+  return(integrals)
+}
+
+
+fill_V <- function(x, integrals, index, K, nBasis) {
+  aux <- rep(0, K * nBasis)
+  for (u in seq_len(nrow(x) - 1)) {
+    state <- x$state[u]
+    s <- as.character(x$time[u])
+    e <- as.character(x$time[u + 1])
+    for (i in seq_len(nBasis)) {
+        integral <- sum(integrals[[i]][index[s, ]:(index[e, ] - 1)])
+        ind <- (state - 1) * nBasis + i
+        aux[ind] <- aux[ind] + integral
+    }
+  }
+  return(aux)
+}
+
+
 # return a matrix with nId rows and nBasis * nState columns
 computeUmatrix <- function(data, basisobj, K, uniqueId, nCores, verbose, ...) {
   nBasis <- basisobj$nbasis
 
-  phi <- fd(diag(nBasis), basisobj) # les fonctions de base comme données fonctionnelles
+  phi <- fd(diag(nBasis), basisobj) # basis functions as functional data
 
   # declare parallelization
   if (nCores > 1) {
@@ -292,7 +386,7 @@ computeUmatrix <- function(data, basisobj, K, uniqueId, nCores, verbose, ...) {
     pbo <- pboptions(type = "none")
   }
 
-  Uval <- do.call(rbind, pblapply(cl = cl, split(data, data$id), compute_Uxij, phi = phi, K = K)[uniqueId])
+  Uval <- do.call(rbind, pblapply(cl = cl, split(data, data$id), compute_Uxij, phi = phi, K = K, ...)[uniqueId])
 
   # stop parallelization
   if (nCores > 1) {
@@ -342,26 +436,25 @@ compute_Uxij <- function(x, phi, K, ...) {
   nBasis <- phi$basis$nbasis
   aux <- rep(0, K * nBasis * nBasis)
 
-  for (u in seq_len(nrow(x) - 1))
-  {
+  for (u in seq_len(nrow(x) - 1)) {
     state <- x$state[u]
-    for (i in seq_len(nBasis))
-    {
-      for (j in i:nBasis) # symmetry between i and j
-      {
-        integral <- integrate(function(t) {
-          eval.fd(t, phi[i]) * eval.fd(t, phi[j])
-        },
-        lower = x$time[u], upper = x$time[u + 1],
-        stop.on.error = FALSE, ...
+    for (i in seq_len(nBasis)) {
+      for (j in i:nBasis) { # symmetry between i and j
+        integral <- integrate(
+          function(t) {
+            eval.fd(t, phi[i]) * eval.fd(t, phi[j])
+          },
+          lower = x$time[u], upper = x$time[u + 1],
+          stop.on.error = FALSE, ...
         )$value
 
-        aux[(state - 1) * nBasis * nBasis + (i - 1) * nBasis + j] <- aux[(state - 1) * nBasis * nBasis + (i - 1) * nBasis + j] + integral
-
+        ind <- (state - 1) * nBasis * nBasis + (i - 1) * nBasis + j
+        aux[ind] <- aux[ind] + integral
 
         # when i == j, we are on the diagonal of the matrix, no symmetry to apply
         if (i != j) {
-          aux[(state - 1) * nBasis * nBasis + (j - 1) * nBasis + i] <- aux[(state - 1) * nBasis * nBasis + (j - 1) * nBasis + i] + integral
+          ind <- (state - 1) * nBasis * nBasis + (j - 1) * nBasis + i
+          aux[ind] <- aux[ind] + integral
         }
       }
     }
@@ -371,6 +464,94 @@ compute_Uxij <- function(x, phi, K, ...) {
 }
 
 
+# return a matrix with nId rows and nBasis * nState columns
+computeUmatrix2 <- function(data, basisobj, K, uniqueId, uniqueTime, nCores, verbose, ...) {
+  nBasis <- basisobj$nbasis
+
+  phi <- fd(diag(nBasis), basisobj) # basis function as functional data
+  # TODO https://r-coder.com/progress-bar-r/
+
+  t3 <- proc.time()
+  if (verbose) {
+    cat(paste0("---- Compute U matrix:\n"))
+  }
+  index <- data.frame(seq_along(uniqueTime), row.names = uniqueTime)
+
+  integrals <- compute_integral_U(phi, uniqueTime, verbose)
+
+  # Uval <- do.call(
+  #   rbind,
+  #   pblapply(cl = cl, split(data, data$id), fill_U, integrals = integrals, index = index, K = K, nBasis = nBasis)[uniqueId]
+  # )
+
+  Uval <- do.call(
+    rbind,
+    lapply(split(data, data$id), fill_U, integrals = integrals, index = index, K = K, nBasis = nBasis)[uniqueId]
+  )
+
+  t4 <- proc.time()
+  if (verbose) {
+    cat(paste0("\nDONE in ", round((t4 - t3)[3], 2), "s\n"))
+  }
+
+  return(Uval)
+}
+
+
+compute_integral_U <- function(phi, uniqueTime, verbose, ...) {
+  nBasis <- phi$basis$nbasis
+  if (verbose) {
+    nIter <- nBasis * (1 + nBasis) / 2
+    pb <- timerProgressBar(min = 0, max = nIter, width = 50)
+    on.exit(close(pb))
+    jj <- 1
+  }
+
+  integrals <- list()
+  for (i in seq_len(nBasis)) { # TODO parallel
+    integrals[[i]] <- list()
+    for (j in i:nBasis) {
+      integrals[[i]][[j]] <- rep(0, length(uniqueTime))
+      for (ii in seq_len(length(uniqueTime) - 1)) {
+        integrals[[i]][[j]][ii] <- integrate(
+          function(t) {
+            eval.fd(t, phi[i]) * eval.fd(t, phi[j])
+          },
+          lower = uniqueTime[ii], upper = uniqueTime[ii + 1],
+          stop.on.error = FALSE, ...
+        )$value
+      }
+      if (verbose) {
+        setTimerProgressBar(pb, jj)
+        jj <- jj + 1
+      }
+    }
+  }
+  return(integrals)
+}
+
+fill_U <- function(x, integrals, index, K, nBasis) {
+  aux <- rep(0, K * nBasis * nBasis)
+  for (u in seq_len(nrow(x) - 1)) {
+    state <- x$state[u]
+    s <- as.character(x$time[u])
+    e <- as.character(x$time[u + 1])
+    for (i in seq_len(nBasis)) {
+      for (j in i:nBasis) { # symmetry between i and j
+        integral <- sum(integrals[[i]][[j]][index[s, ]:(index[e, ] - 1)])
+        ind <- (state - 1) * nBasis * nBasis + (i - 1) * nBasis + j
+        aux[ind] <- aux[ind] + integral
+
+        # when i == j, we are on the diagonal of the matrix, no symmetry to apply
+        if (i != j) {
+          ind <- (state - 1) * nBasis * nBasis + (j - 1) * nBasis + i
+          aux[ind] <- aux[ind] + integral
+        }
+      }
+    }
+  }
+  return(aux)
+}
 
 # @author Cristian Preda, Quentin Grimonprez
 computeEncoding <- function(Uval, V, K, nBasis, uniqueId, label, verbose, manage0 = FALSE) {
@@ -384,8 +565,7 @@ computeEncoding <- function(Uval, V, K, nBasis, uniqueId, label, verbose, manage
   # create F matrix
   Fval <- colMeans(Uval)
   Fmat <- matrix(0, ncol = K * nBasis, nrow = K * nBasis) # diagonal-block matrix with K blocks of size nBasis*nBasis
-  for (i in seq_len(K))
-  {
+  for (i in seq_len(K)) {
     Fmat[((i - 1) * nBasis + 1):(i * nBasis), ((i - 1) * nBasis + 1):(i * nBasis)] <-
       matrix(Fval[((i - 1) * nBasis * nBasis + 1):(i * nBasis * nBasis)], ncol = nBasis, byrow = TRUE)
   }
@@ -401,7 +581,11 @@ computeEncoding <- function(Uval, V, K, nBasis, uniqueId, label, verbose, manage
     # column full of 0
     ind0 <- (colSums(Fmat == 0) == nrow(Fmat))
     if (sum(ind0) > 0) {
-      warning("The F matrix contains at least one column of 0s. At least one state is not present in the support of one basis function. Corresponding coefficients in the alpha output will have a 0 value.")
+      warning(paste(
+        "The F matrix contains at least one column of 0s.",
+        "At least one state is not present in the support of one basis function.",
+        "Corresponding coefficients in the alpha output will have a 0 value."
+      ))
     }
 
     F05 <- t(mroot(Fmat[!ind0, !ind0])) # F  = t(F05)%*%F05
@@ -416,7 +600,10 @@ computeEncoding <- function(Uval, V, K, nBasis, uniqueId, label, verbose, manage
     if (any(dim(F05) != rep(K * nBasis, 2))) {
       cat("\n")
       if (any(colSums(Fmat) == 0)) {
-        stop("F matrix is not invertible. In the support of each basis function, each state must be present at least once (p(x_t) != 0 for t in the support). You can try to change the basis.")
+        stop(paste("F matrix is not invertible. In the support of each basis function,",
+          "each state must be present at least once (p(x_t) != 0 for t in the support).",
+          "You can try to change the basis."
+        ))
       }
 
       stop("F matrix is not invertible. You can try to change the basis.")
@@ -425,24 +612,23 @@ computeEncoding <- function(Uval, V, K, nBasis, uniqueId, label, verbose, manage
 
 
   invF05 <- solve(F05)
-  # res = eigen(F05%*%solve(F)%*%G%*%solve(F05))
+  # res <- eigen(F05 %*% solve(F) %*% G %*% solve(F05))
   res <- eigen(t(invF05) %*% G %*% invF05)
 
-  # les vecteurs propres (qui donnent les coeffs des m=nBasis codages, pour chaque val propre)
-  # je les mets sous la forme d'une liste de matrices de taille m x K. La premiere matrice
-  # correspond au premier vecteur propre. ce vecteur (1ere colonne dans res$vectors) contient
-  # les coefs du codage pour l'état 1 sur les premières m (=nBasis) positions, ensuite pour l'état 2 sur
-  # m positions et enfin pour le k-eme état. Je mets cette première colonne sous forme de
-  # matrice et les coefs sont sous forme de colonnes de taille m
+  # eigenvectors (they give the coefficients of the m=nBasis encoding, for each eigenvalue) as a list of matrices of size m x K
+  # The first matrix is the first eigenvector. This vector (1rst column in res$vectors) contains the coefficients of the
+  # encoding for the state 1 in the first m (=nBasis) positions, then for the state 2 in the m next positions and so on
+  # until the k-th state.
+  # I put this first column as and matrix and the coefficientsare column of length m
 
-  # met la matrice de vecteurs propres comme une liste
+  # transform the matrix of eigenvectors as a list
 
   # aux1 = split(res$vectors, rep(1:ncol(res$vectors), each = nrow(res$vectors)))
   invF05vec <- invF05 %*% res$vectors
   aux1 <- split(invF05vec, rep(seq_len(ncol(res$vectors)), each = nrow(res$vectors)))
 
-  # on construit les matrices m x K pour chaque valeur propre : 1ere colonne les coefs pour etat 1,
-  # 2eme col les coefs pour état 2, etc
+  # we create the matrices m x K for each eigenvalue: 1rst column = coefficients for state 1,
+  # 2nd col = coefficients for state 2, etc
 
   alpha <- lapply(aux1, function(w) {
     wb <- rep(NA, nBasis * K)

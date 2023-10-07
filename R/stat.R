@@ -2,7 +2,8 @@
 #'
 #' For each individual, compute the time spent in each state
 #'
-#' @param data data.frame containing \code{id}, id of the trajectory, \code{time}, time at which a change occurs and \code{state}, associated state.
+#' @param data data.frame containing \code{id}, id of the trajectory, \code{time}, time at which a change occurs
+#' and \code{state}, associated state.
 #'
 #' @return a matrix with \code{K} columns containing the total time spent in each state for each individual
 #'
@@ -45,7 +46,7 @@ compute_time_spent <- function(data) {
 }
 
 
-# combien de temps passe un id dans [0,T] dans chaque etat, x vient d'un msmT
+# How long an individual stays in each state
 # @author Cristian Preda
 compute_time_spent_intern <- function(data, labels) {
   aux <- rep(0, length(labels))
@@ -114,7 +115,8 @@ boxplot.timeSpent <- function(x, col = NULL, ...) {
 #'
 #' For each individual, compute the duration
 #'
-#' @param data data.frame containing \code{id}, id of the trajectory, \code{time}, time at which a change occurs and \code{state}, associated state.
+#' @param data data.frame containing \code{id}, id of the trajectory, \code{time}, time at which a change occurs
+#' and \code{state}, associated state.
 #'
 #' @return a vector containing the duration of each trajectories
 #'
@@ -195,9 +197,11 @@ hist.duration <- function(x, breaks = NULL, ...) {
 
 #' Extract the state of each individual at a given time
 #'
-#' @param data data.frame containing \code{id}, id of the trajectory, \code{time}, time at which a change occurs and \code{state}, associated state.
+#' @param data data.frame containing \code{id}, id of the trajectory, \code{time}, time at which a change occurs and
+#' \code{state}, associated state.
 #' @param t time at which extract the state
-#' @param NAafterTmax if TRUE, return NA if t > Tmax otherwise return the state associated with Tmax (useful when individuals has different lengths)
+#' @param NAafterTmax if TRUE, return NA if t > Tmax otherwise return the state associated with Tmax
+#' (useful when individuals has different lengths)
 #'
 #' @return a vector containing the state of each individual at time t
 #'
@@ -240,7 +244,8 @@ get_state <- function(data, t, NAafterTmax = FALSE) {
 
 # return the state at time t
 #
-# x un individu de type msm et t un temps
+# x cfda dataframe
+# t time value
 # NAafterTmax if TRUE, return NA if t > Tmax otherwise return the state associated with Tmax
 # @author Cristian Preda, Quentin Grimonprez
 id_get_state <- function(x, t, NAafterTmax = FALSE) {
@@ -256,13 +261,16 @@ id_get_state <- function(x, t, NAafterTmax = FALSE) {
 
 #' Estimate probabilities to be in each state
 #'
-#' @param data data.frame containing \code{id}, id of the trajectory, \code{time}, time at which a change occurs and \code{state}, associated state.
-#' @param NAafterTmax if TRUE, return NA if t > Tmax otherwise return the state associated with Tmax (useful when individuals has different lengths)
+#' @param data data.frame containing \code{id}, id of the trajectory, \code{time}, time at which a change occurs
+#' and \code{state}, associated state.
+#' @param NAafterTmax if TRUE, return NA if t > Tmax otherwise return the state associated with Tmax
+#' (useful when individuals has different lengths)
 #'
 #' @return A list of two elements:
 #' \itemize{
 #'   \item{t: vector of time}
-#'   \item{pt: a matrix with K (= number of states) rows and with \code{length(t)} columns containing the probabilities to be in each state at each time.}
+#'   \item{pt: a matrix with K (= number of states) rows and with \code{length(t)} columns containing the
+#' probabilities to be in each state at each time.}
 #' }
 #'
 #'
@@ -606,7 +614,7 @@ statetable <- function(data, removeDiagonal = FALSE) {
 
   out <- statetable.msm(newState$state, data$id)
 
-  # il se peut que la matrice aux ne soit pas carré si au moins un état absorbant existe.
+  # If there is at least 1 absorbing state, the matrix is not a square matrix
   out <- completeStatetable(out)
 
   colnames(out) <- newState$label$label[match(colnames(out), newState$label$code)]
