@@ -1,6 +1,6 @@
 #' Print a \code{fmca} object
 #'
-#' @param x \code{fmca} object (see \link{compute_optimal_encoding} function)
+#' @param x \code{fmca} object (see \code{\link{compute_optimal_encoding}} function)
 #' @param n maximal number of rows and cols to print
 #' @param ... Not used.
 #'
@@ -11,6 +11,8 @@
 #' @family encoding functions
 #' @export
 print.fmca <- function(x, n = 6, ...) {
+  checkInteger(n, minValue = 0, paramName = "n")
+
   cat("$basisobj:\n")
   cat("  Type:", x$basisobj$type, "\n")
   cat("  Range:", x$basisobj$rangeval[1], "to", x$basisobj$rangeval[2], "\n")
@@ -32,7 +34,7 @@ print.fmca <- function(x, n = 6, ...) {
 #'
 #' @description Summary of a \code{fmca} object
 #'
-#' @param object \code{fmca} object (see \link{compute_optimal_encoding} function)
+#' @param object \code{fmca} object (see \code{\link{compute_optimal_encoding}} function)
 #' @param n maximal number of rows and cols to print
 #' @param ... Not used.
 #'
@@ -43,6 +45,8 @@ print.fmca <- function(x, n = 6, ...) {
 #' @family encoding functions
 #' @export
 summary.fmca <- function(object, n = 6, ...) {
+  checkInteger(n, minValue = 1, paramName = "n")
+
   cat("#### FMCA\n\n")
   cat("## Data \n")
   cat("Number of individuals:", nrow(object$pc), "\n")

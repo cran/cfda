@@ -1,10 +1,9 @@
-
 #' Plot the optimal encoding
 #'
 #' @param x output of \code{\link{compute_optimal_encoding}} function
 #' @param harm harmonic to use for the encoding
 #' @param states states to plot (default = NULL, it plots all states)
-#' @param addCI if TRUE, plot confidence interval (only when \code{computeCI = TRUE} in \link{compute_optimal_encoding})
+#' @param addCI if TRUE, plot confidence interval (only when \code{computeCI = TRUE} in \code{\link{compute_optimal_encoding}})
 #' @param coeff the confidence interval is computed with +- coeff * the standard deviation
 #' @param col a vector containing color for each state
 #' @param nx number of time points used to plot
@@ -85,7 +84,7 @@ plotEncodingCI <- function(fdmat, variance, coeff = 2, states = NULL, harm = 1, 
       State = factor(rep(colnames(fdmat$y)[i], each = nrow(fdmat$y)), levels = colnames(fdmat$y))
     )
     p <- p + geom_ribbon(
-      data = df, aes_string(ymin = "ymin", ymax = "ymax", x = "time", fill = "State"),
+      data = df, aes(ymin = .data$ymin, ymax = .data$ymax, x = .data$time, fill = .data$State),
       colour = NA, alpha = 0.8
     )
   }
@@ -98,7 +97,7 @@ plotEncodingCI <- function(fdmat, variance, coeff = 2, states = NULL, harm = 1, 
   df <- df[df$State %in% states, ]
 
   p <- p +
-    geom_line(data = df, mapping = aes_string(x = "x", y = "y", group = "State", colour = "State"), alpha = 1) +
+    geom_line(data = df, mapping = aes(x = .data$x, y = .data$y, group = .data$State, colour = .data$State), alpha = 1) +
     scale_colour_hue(l = 30, drop = FALSE)
 
   p <- p +
@@ -123,7 +122,7 @@ plotEncoding <- function(fdmat, states = NULL, harm = 1, col = NULL) {
   )
 
   df <- df[df$State %in% states, ]
-  p <- ggplot(df, aes_string(x = "x", y = "y", group = "State", colour = "State")) +
+  p <- ggplot(df, aes(x = .data$x, y = .data$y, group = .data$State, colour = .data$State)) +
     geom_line()
 
   p <- p +
@@ -182,20 +181,15 @@ plotEncoding <- function(fdmat, states = NULL, harm = 1, col = NULL) {
 #' @export
 get_encoding <- function(x, harm = 1, fdObject = FALSE, nx = NULL) {
   ## check parameters
-  if (!inherits(x, "fmca")) {
-    stop("x must be a fmca object.")
-  }
+  checkFmca(x)
   checkLogical(fdObject, "fdObject")
-  if (!is.null(nx)) {
-    if (any(is.na(nx)) || (length(nx) > 1) || !is.whole.number(nx) || (nx <= 0)) {
-      stop("nx must be a positive integer.")
-    }
-  }
-  if (any(is.na(harm)) || (length(harm) > 1) || !is.whole.number(harm) || (harm < 1) || (harm > length(x$alpha))) {
-    stop("harm must be an integer between 1 and the number of components.")
-  }
+  checkInteger(nx, minValue = 0, acceptNULL = TRUE, paramName = "nx")
+  checkInteger(
+    harm,
+    minValue = 1, maxValue = length(x$alpha), minEqual = TRUE, maxEqual = TRUE,
+    customMessage = "harm must be an integer between 1 and the number of components."
+  )
   ##
-
 
   alpha <- x$alpha[[harm]]
 
@@ -271,15 +265,12 @@ removeTimeAssociatedWithNACoeff <- function(fdmat, timeVal, pt) {
 #'   labs(title = "Two first components")
 #' }
 #'
-#'
 #' @author Quentin Grimonprez
 #' @family encoding functions
 #' @export
 plotComponent <- function(x, comp = c(1, 2), addNames = TRUE, nudge_x = 0.1, nudge_y = 0.1, size = 4, ...) {
   ## check parameters
-  if (!inherits(x, "fmca")) {
-    stop("x must be a fmca object.")
-  }
+  checkFmca(x)
   checkLogical(addNames, "addNames")
   if (length(comp) != 2) {
     stop("comp must be a vector of positive integers of length 2.")
@@ -292,12 +283,12 @@ plotComponent <- function(x, comp = c(1, 2), addNames = TRUE, nudge_x = 0.1, nud
   df <- as.data.frame(Re(x$pc))
   df$name <- rownames(x$pc)
 
-  p <- ggplot(df, aes_string(x = paste0("V", comp[1]), y = paste0("V", comp[2]))) +
+  p <- ggplot(df, aes(x = .data[[paste0("V", comp[1])]], y = .data[[paste0("V", comp[2])]])) +
     geom_point(...) +
     labs(x = paste0("Comp ", comp[1]), y = paste0("Comp ", comp[2]))
 
   if (addNames) {
-    p <- p + geom_text(aes_string(label = "name"), nudge_x = nudge_x, nudge_y = nudge_y, size = size)
+    p <- p + geom_text(aes(label = .data$name), nudge_x = nudge_x, nudge_y = nudge_y, size = size)
   }
 
   p
@@ -338,15 +329,12 @@ plotComponent <- function(x, comp = c(1, 2), addNames = TRUE, nudge_x = 0.1, nud
 #'   labs(caption = "Jukes-Cantor model of nucleotide replacement")
 #' }
 #'
-#'
 #' @author Quentin Grimonprez
 #' @family encoding functions
 #' @export
 plotEigenvalues <- function(x, cumulative = FALSE, normalize = FALSE, ...) {
   ## check parameters
-  if (!inherits(x, "fmca")) {
-    stop("x must be a fmca object.")
-  }
+  checkFmca(x)
   checkLogical(cumulative, "cumulative")
   checkLogical(normalize, "normalize")
   ##
@@ -366,7 +354,7 @@ plotEigenvalues <- function(x, cumulative = FALSE, normalize = FALSE, ...) {
 
   df <- data.frame(eigenvalues = eigenv, component = comp)
 
-  p <- ggplot(df, aes_string(x = "component", y = "eigenvalues")) +
+  p <- ggplot(df, aes(x = .data$component, y = .data$eigenvalues)) +
     geom_point(...) +
     geom_step() +
     labs(

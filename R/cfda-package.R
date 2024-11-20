@@ -1,8 +1,9 @@
-#' @import diagram fda ggplot2 msm mgcv pbapply
+#' @import diagram fda ggplot2 msm mgcv pbapply dplyr tidyr
 #' @importFrom parallel detectCores makeCluster stopCluster
 #' @importFrom stats cov integrate rexp runif var
 #' @importFrom graphics boxplot
 #' @importFrom utils head
+#' @importFrom tibble add_column is_tibble
 #'
 #' @title Categorical Functional Data Analysis
 #' @docType package
@@ -14,7 +15,7 @@
 #' The main contribution is the computation of an optimal encoding (real functional variable) of each state of the categorical
 #' functional data.
 #' This can be done using the \code{\link{compute_optimal_encoding}} function that takes in arguments the data in a specific
-#' format and a basis of functions created using the \code{fda} package (cf. \code{\link{create.basis}}).
+#' format and a basis of functions created using the \code{fda} package (cf. \code{\link[fda]{create.basis}}).
 #' The output can be analysed with \code{\link{summary.fmca}}, \code{\link{plot.fmca}}, \code{\link{get_encoding}},
 #' \code{\link{plotEigenvalues}} and \code{\link{plotComponent}}.
 #'
@@ -77,7 +78,7 @@
 #'
 #' # extract the encoding using the first harmonic
 #' encod <- get_encoding(encoding)
-#' @seealso \link{compute_optimal_encoding}
+#' @seealso \code{\link{compute_optimal_encoding}}
 #'
-#' @keywords package
-NULL
+#' @keywords internal
+"_PACKAGE"

@@ -2,6 +2,7 @@
 % Please edit documentation in R/cfda-package.R
 \docType{package}
 \name{cfda-package}
+\alias{cfda}
 \alias{cfda-package}
 \title{Categorical Functional Data Analysis}
 \description{
@@ -10,7 +11,7 @@ cfda provides functions for the analysis of categorical functional data.
 The main contribution is the computation of an optimal encoding (real functional variable) of each state of the categorical
 functional data.
 This can be done using the \code{\link{compute_optimal_encoding}} function that takes in arguments the data in a specific
-format and a basis of functions created using the \code{fda} package (cf. \code{\link{create.basis}}).
+format and a basis of functions created using the \code{fda} package (cf. \code{\link[fda]{create.basis}}).
 The output can be analysed with \code{\link{summary.fmca}}, \code{\link{plot.fmca}}, \code{\link{get_encoding}},
 \code{\link{plotEigenvalues}} and \code{\link{plotComponent}}.
 
@@ -73,6 +74,20 @@ Mathematics. 2021; 9(23):3074. https://doi.org/10.3390/math9233074
 }
 }
 \seealso{
-\link{compute_optimal_encoding}
+\code{\link{compute_optimal_encoding}}
 }
-\keyword{package}
+\author{
+\strong{Maintainer}: Quentin Grimonprez \email{quentingrim@yahoo.fr}
+
+Authors:
+\itemize{
+  \item Cristian Preda \email{cristian.preda@inria.fr}
+}
+
+Other contributors:
+\itemize{
+  \item Vincent Vandewalle \email{vincent.vandewalle@inria.fr} [contributor]
+}
+
+}
+\keyword{internal}

@@ -1,4 +1,3 @@
-
 #' Plot categorical functional data
 #'
 #' @param data data.frame containing \code{id}, id of the trajectory, \code{time}, time at which a change occurs and
@@ -47,15 +46,13 @@
 #' @export
 plotData <- function(data, group = NULL, col = NULL, addId = TRUE, addBorder = TRUE, sort = FALSE, nCol = NULL) {
   ## check parameters
-  checkData(data)
+  checkData(data, minSize = 0)
   checkLogical(addId, "addId")
   checkLogical(addBorder, "addBorder")
   checkLogical(sort, "sort")
+  checkInteger(nCol, minValue = 0, acceptNULL = TRUE, paramName = "nCol")
   if (!is.null(group) && ((!is.vector(group) && !is.factor(group)) || (length(group) != length(unique(data$id))))) {
     stop("group must be a vector with the same length than the number of ids of data.")
-  }
-  if (!is.null(nCol) && (!is.numeric(nCol) || (length(nCol) != 1) || !is.whole.number(nCol) || (nCol < 1))) {
-    stop("nCol must be an integer > 0.")
   }
   ## end check
 
@@ -89,10 +86,15 @@ plotData <- function(data, group = NULL, col = NULL, addId = TRUE, addBorder = T
   }
 
   p <- ggplot() +
-    geom_rect(data = d_graph,
-              mapping = aes_string(xmin = "t_start", xmax = "t_end", ymin = "position - 0.5",
-                                   ymax = "position + 0.5", fill = "state"),
-              color = ifelse(addBorder, "black", NA)) +
+    geom_rect(
+      data = d_graph,
+      mapping = aes(
+        xmin = .data$t_start, xmax = .data$t_end, ymin = .data$position - 0.5,
+        ymax = .data$position + 0.5, fill = .data$state
+      ),
+      show.legend = TRUE,
+      color = ifelse(addBorder, "black", NA)
+    ) +
     scale_x_continuous(name = "Time") +
     labs(fill = "State")
 
@@ -179,8 +181,10 @@ computePositionPerGroup <- function(data, id, group, sort = FALSE) {
 # @author Quentin Grimonprez
 orderFirstState <- function(data) {
   firstState <- do.call(rbind, by(data, data$id, function(x) {
-    data.frame(id = x$id[1], time = ifelse(length(x$time) < 2, Inf, x$time[2] - x$time[1]),
-               state = x$state[1], stringsAsFactors = FALSE)
+    data.frame(
+      id = x$id[1], time = ifelse(length(x$time) < 2, Inf, x$time[2] - x$time[1]),
+      state = x$state[1], stringsAsFactors = FALSE
+    )
   }))
   firstStateOrdered <- do.call(rbind, by(firstState, firstState$state, function(x) {
     x[order(x$time), ]
@@ -232,6 +236,7 @@ createLabeller <- function(group) {
 #' @export
 summary_cfd <- function(data, max.print = 10) {
   checkData(data)
+  checkInteger(max.print, minValue = 0, paramName = "max.print")
 
   nIndiv <- length(unique(data$id))
   if (is.factor(data$state)) {

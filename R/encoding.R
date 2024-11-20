@@ -6,7 +6,7 @@
 #' @param data data.frame containing \code{id}, id of the trajectory, \code{time}, time at which a change occurs and
 #' \code{state}, associated state. All individuals must begin at the same time T0 and end at the same time Tmax
 #' (use \code{\link{cut_data}}).
-#' @param basisobj basis created using the \code{fda} package (cf. \code{\link{create.basis}}).
+#' @param basisobj basis created using the \code{fda} package (cf. \code{\link[fda]{create.basis}}).
 #' @param computeCI if TRUE, perform a bootstrap to estimate the variance of encoding functions coefficients
 #' @param nBootstrap number of bootstrap samples
 #' @param propBootstrap size of bootstrap samples relative to the number of individuals: propBootstrap * number of individuals
@@ -25,7 +25,7 @@
 #'   \item \code{V} matrix containing the \eqn{V_{(x,i)}}
 #'   \item \code{G} covariance matrix of \code{V}
 #'   \item \code{basisobj} \code{basisobj} input parameter
-#'   \item \code{pt} output of \link{estimate_pt} function
+#'   \item \code{pt} output of \code{\link{estimate_pt}} function
 #'   \item \code{bootstrap} Only if \code{computeCI = TRUE}. Output of every bootstrap run
 #'   \item \code{varAlpha} Only if \code{computeCI = TRUE}. Variance of alpha parameters
 #'   \item \code{runTime} Total elapsed time
@@ -69,7 +69,7 @@
 #'
 #' # extract the optimal encoding
 #' get_encoding(encoding, harm = 1)
-#' @seealso \link{plot.fmca} \link{print.fmca} \link{summary.fmca} \link{plotComponent} \link{get_encoding}
+#' @seealso \code{link{plot.fmca}} \code{link{print.fmca}} \code{link{summary.fmca}} \code{link{plotComponent}} \code{link{get_encoding}}
 #'
 #' @author Cristian Preda, Quentin Grimonprez
 #'
@@ -89,8 +89,8 @@
 #'
 #' @export
 compute_optimal_encoding <- function(
-  data, basisobj, computeCI = TRUE, nBootstrap = 50, propBootstrap = 1, method = c("precompute", "parallel"),
-  verbose = TRUE, nCores = max(1, ceiling(detectCores() / 2)),  ...) {
+    data, basisobj, computeCI = TRUE, nBootstrap = 50, propBootstrap = 1, method = c("precompute", "parallel"),
+    verbose = TRUE, nCores = max(1, ceiling(detectCores() / 2)), ...) {
   t1 <- proc.time()
 
   ## check parameters
@@ -124,6 +124,7 @@ compute_optimal_encoding <- function(
     cat(paste0("Basis type: ", basisobj$type, "\n"))
     cat(paste0("Number of basis functions: ", nBasis, "\n"))
     cat(paste0("Number of cores: ", nCores, "\n"))
+    cat(paste0("Method: ", method, "\n"))
   }
 
   if (method == "precompute") {
@@ -150,11 +151,19 @@ compute_optimal_encoding <- function(
       out <- c(fullEncoding, list(V = V, basisobj = basisobj, label = label, pt = pt))
     } else {
       varAlpha <- computeVarianceAlpha(bootEncoding, K, nBasis)
-      out <- c(fullEncoding, list(V = V, basisobj = basisobj, label = label, pt = pt,
-                                  bootstrap = bootEncoding, varAlpha = varAlpha))
+      out <- c(fullEncoding, list(
+        V = V, basisobj = basisobj, label = label, pt = pt,
+        bootstrap = bootEncoding, varAlpha = varAlpha
+      ))
     }
   } else {
     out <- c(fullEncoding, list(V = V, basisobj = basisobj, label = label, pt = pt))
+  }
+
+  if (is.complex(out$eigenvalues)) {
+    warning("Eigenvalues contain complex values. Only the real part is returned.")
+    out$eigenvalues <- Re(out$eigenvalues)
+    out$pc <- Re(out$pc)
   }
 
   class(out) <- "fmca"
@@ -183,9 +192,8 @@ check_compute_optimal_encoding_parameters <- function(data, basisobj, nCores, ve
   checkLogical(verbose, "verbose")
   checkLogical(computeCI, "computeCI")
   if (computeCI) {
-    if (any(is.na(nBootstrap)) || (length(nBootstrap) != 1) || !is.whole.number(nBootstrap) || (nBootstrap < 1)) {
-      stop("nBootstrap must be an integer > 0.")
-    }
+    checkInteger(nBootstrap, minValue = 0, minEqual = FALSE, paramName = "nBootstrap")
+
     if (any(is.na(propBootstrap)) || !is.numeric(propBootstrap) || (length(propBootstrap) != 1) || (propBootstrap > 1) || (
       propBootstrap <= 0)) {
       stop("propBootstrap must be a real between 0 and 1.")
@@ -356,9 +364,9 @@ fill_V <- function(x, integrals, index, K, nBasis) {
     s <- as.character(x$time[u])
     e <- as.character(x$time[u + 1])
     for (i in seq_len(nBasis)) {
-        integral <- sum(integrals[[i]][index[s, ]:(index[e, ] - 1)])
-        ind <- (state - 1) * nBasis + i
-        aux[ind] <- aux[ind] + integral
+      integral <- sum(integrals[[i]][index[s, ]:(index[e, ] - 1)])
+      ind <- (state - 1) * nBasis + i
+      aux[ind] <- aux[ind] + integral
     }
   }
   return(aux)
@@ -484,9 +492,18 @@ computeUmatrix2 <- function(data, basisobj, K, uniqueId, uniqueTime, nCores, ver
   #   pblapply(cl = cl, split(data, data$id), fill_U, integrals = integrals, index = index, K = K, nBasis = nBasis)[uniqueId]
   # )
 
+  cl <- NULL
+
+  if (verbose) {
+    pbo <- pboptions(type = "timer", char = "=")
+  } else {
+    pbo <- pboptions(type = "none")
+  }
+
+
   Uval <- do.call(
     rbind,
-    lapply(split(data, data$id), fill_U, integrals = integrals, index = index, K = K, nBasis = nBasis)[uniqueId]
+    pblapply(cl = cl, split(data, data$id), fill_U, integrals = integrals, index = index, K = K, nBasis = nBasis)[uniqueId]
   )
 
   t4 <- proc.time()
@@ -560,7 +577,7 @@ computeEncoding <- function(Uval, V, K, nBasis, uniqueId, label, verbose, manage
     cat(paste0("---- Compute encoding: "))
   }
 
-  G <- cov(V)
+  G <- cov(V) * (nrow(V) - 1) / nrow(V)
 
   # create F matrix
   Fval <- colMeans(Uval)
@@ -600,7 +617,8 @@ computeEncoding <- function(Uval, V, K, nBasis, uniqueId, label, verbose, manage
     if (any(dim(F05) != rep(K * nBasis, 2))) {
       cat("\n")
       if (any(colSums(Fmat) == 0)) {
-        stop(paste("F matrix is not invertible. In the support of each basis function,",
+        stop(paste(
+          "F matrix is not invertible. In the support of each basis function,",
           "each state must be present at least once (p(x_t) != 0 for t in the support).",
           "You can try to change the basis."
         ))
@@ -619,7 +637,7 @@ computeEncoding <- function(Uval, V, K, nBasis, uniqueId, label, verbose, manage
   # The first matrix is the first eigenvector. This vector (1rst column in res$vectors) contains the coefficients of the
   # encoding for the state 1 in the first m (=nBasis) positions, then for the state 2 in the m next positions and so on
   # until the k-th state.
-  # I put this first column as and matrix and the coefficientsare column of length m
+  # I put this first column as and matrix and the coefficients are column of length m
 
   # transform the matrix of eigenvectors as a list
 

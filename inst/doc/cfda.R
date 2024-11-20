@@ -13,7 +13,7 @@ lambda_PJK <- c(1, 1, 1, 1)
 Tmax <- 10
 n <- 100
 
-d_JK <- generate_Markov(n = n, K = 4, P = PJK, lambda = lambda_PJK, Tmax = Tmax, labels = c("A", "C", "G", "T"))
+d_JK <- generate_Markov(n = n, K = 4, P = PJK, lambda = lambda_PJK, Tmax = Tmax, labels = as.factor(c("A", "C", "G", "T")))
 
 head(d_JK, 10)
 
@@ -63,7 +63,7 @@ mark
 plot(mark)
 
 ## ----echo=TRUE----------------------------------------------------------------
-m <- 10
+m <- 20
 basis <- create.bspline.basis(c(0, Tmax), nbasis = m, norder = 4)
 
 ## ----echo=TRUE----------------------------------------------------------------
@@ -71,7 +71,7 @@ fmca <- compute_optimal_encoding(d_JKT, basis, verbose = FALSE)
 summary(fmca)
 
 ## ----echo=TRUE----------------------------------------------------------------
-plotEigenvalues(fmca, cumulative = TRUE)
+plotEigenvalues(fmca, cumulative = TRUE, normalize = TRUE)
 
 ## ----echo=TRUE----------------------------------------------------------------
 print(fmca$alpha[[1]])
@@ -86,5 +86,17 @@ encoding <- get_encoding(fmca, fdObject = TRUE)
 plot(fmca, addCI = TRUE, coeff = 2, states = "A")
 
 ## ----echo=TRUE----------------------------------------------------------------
-plotComponent(fmca, comp = c(1, 2), addNames = FALSE)
+plotComponent(fmca, comp = c(1, 2), addNames = TRUE)
+
+## ----echo=TRUE----------------------------------------------------------------
+plotData(d_JKT[d_JKT$id %in% c(3, 14, 67, 84), ])
+
+## ----echo=TRUE----------------------------------------------------------------
+indicators <- reconstructIndicators(fmca)
+head(indicators)
+
+## ----echo=TRUE----------------------------------------------------------------
+iInd <- 3
+plotData(d_JKT[d_JKT$id == iInd, ])
+plotIndicatorsReconstruction(indicators, id = iInd)
 

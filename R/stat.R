@@ -19,7 +19,7 @@
 #'
 #' # compute time spent by each id in each state
 #' timeSpent <- compute_time_spent(d_JK2)
-#' @seealso \link{boxplot.timeSpent}
+#' @seealso \code{\link{boxplot.timeSpent}}
 #' @family Descriptive statistics
 #' @author Cristian Preda, Quentin Grimonprez
 #'
@@ -91,13 +91,13 @@ compute_time_spent_intern <- function(data, labels) {
 #'   coord_flip() +
 #'   labs(title = "Time spent in each state")
 #' @author Quentin Grimonprez
-#' @seealso \link{compute_time_spent}
+#' @seealso \code{\link{compute_time_spent}}
 #' @family Descriptive statistics
 #'
 #' @export
 boxplot.timeSpent <- function(x, col = NULL, ...) {
   df <- data.frame(timeSpent = as.vector(x), state = factor(rep(colnames(x), each = nrow(x)), levels = colnames(x)))
-  p <- ggplot(df, aes_string(x = "state", y = "timeSpent", fill = "state")) +
+  p <- ggplot(df, aes(x = .data$state, y = .data$timeSpent, fill = .data$state)) +
     geom_boxplot(...) +
     labs(x = "State", y = "Time Spent", fill = "State")
 
@@ -132,7 +132,7 @@ boxplot.timeSpent <- function(x, col = NULL, ...) {
 #' duration <- compute_duration(d_JK)
 #'
 #' hist(duration)
-#' @seealso \link{hist.duration}
+#' @seealso \code{\link{hist.duration}}
 #' @family Descriptive statistics
 #' @author Cristian Preda, Quentin Grimonprez
 #'
@@ -175,7 +175,7 @@ compute_duration <- function(data) {
 #' hist(duration) +
 #'   labs(title = "Distribution of the duration")
 #' @author Quentin Grimonprez
-#' @seealso \link{compute_duration}
+#' @seealso \code{\link{compute_duration}}
 #' @family Descriptive statistics
 #'
 #' @export
@@ -189,7 +189,7 @@ hist.duration <- function(x, breaks = NULL, ...) {
   defaultParam <- list(fill = "lightblue", color = "black", bins = breaks)
   param <- c(extraParam, defaultParam[which(!(names(defaultParam) %in% names(extraParam)))])
 
-  ggplot(data.frame(duration = as.vector(x)), aes_string(x = "duration")) +
+  ggplot(data.frame(duration = as.vector(x)), aes(x = .data$duration)) +
     do.call(geom_histogram, param) +
     labs(x = "Duration", y = "Frequency")
 }
@@ -265,6 +265,7 @@ id_get_state <- function(x, t, NAafterTmax = FALSE) {
 #' and \code{state}, associated state.
 #' @param NAafterTmax if TRUE, return NA if t > Tmax otherwise return the state associated with Tmax
 #' (useful when individuals has different lengths)
+#' @param timeValues time values at which probabilities are computed, if NULL, unique(data$time) are used
 #'
 #' @return A list of two elements:
 #' \itemize{
@@ -286,16 +287,22 @@ id_get_state <- function(x, t, NAafterTmax = FALSE) {
 #' # estimate probabilities
 #' estimate_pt(d_JK2)
 #' @author Cristian Preda, Quentin Grimonprez
-#' @seealso \link{plot.pt}
+#' @seealso \code{\link{plot.pt}}
 #' @family Descriptive statistics
 #'
 #' @export
-estimate_pt <- function(data, NAafterTmax = FALSE) {
+estimate_pt <- function(data, NAafterTmax = FALSE, timeValues = NULL) {
   ## check parameters
   checkData(data)
+  checkLogical(NAafterTmax, paramName = "NAafterTmax")
   ## end check
 
-  t_jumps <- sort(unique(data$time))
+  t_jumps <- timeValues
+  if (is.null(t_jumps)) {
+    t_jumps <- unique(data$time)
+  }
+  t_jumps <- sort(t_jumps)
+
   uniqueId <- unique(data$id)
 
   if (is.factor(data$state)) {
@@ -325,7 +332,7 @@ estimate_pt <- function(data, NAafterTmax = FALSE) {
 
 # Extract probability to be in each state at a given time
 #
-# @param pt output of \link{estimate_pt} function
+# @param pt output of \code{\link{estimate_pt}} function
 # @param t time value at which the probability is required
 #
 # @return  probability to be in each state at time t
@@ -346,7 +353,7 @@ estimate_pt <- function(data, NAafterTmax = FALSE) {
 # get_proba(pt, 1.5)
 #
 #
-# @seealso \link{estimate_pt}
+# @seealso \code{\link{estimate_pt}}
 #
 # @author Quentin Grimonprez
 #
@@ -398,7 +405,7 @@ get_proba <- function(pt, t) {
 #' plot(pt, ribbon = TRUE)
 #' @author Quentin Grimonprez
 #' @method plot pt
-#' @seealso \link{estimate_pt}
+#' @seealso \code{\link{estimate_pt}}
 #' @family Descriptive statistics
 #'
 #' @export
@@ -426,7 +433,7 @@ plot_pt_classic <- function(pt, col = NULL) {
     time = rep(pt$t, nrow(pt$pt))
   )
 
-  p <- ggplot(plot_data, aes_string(x = "time", y = "proba", group = "State", colour = "State")) +
+  p <- ggplot(plot_data, aes(x = .data$time, y = .data$proba, group = .data$State, colour = .data$State)) +
     geom_line() +
     ylim(0, 1) +
     labs(x = "Time", y = "p(t)", title = "P(X(t) = x)")
@@ -458,16 +465,26 @@ plot_pt_ribbon <- function(pt, col = NULL, addBorder = TRUE) {
   plot_data$state0 <- rep(0, nrow(plot_data))
   labels <- c("state0", labels)
 
-  p <- ggplot(plot_data)
+
+  plot_data_list <- NULL
   for (i in seq_len(nState)) {
-    p <- p + geom_ribbon(aes_string(
-      ymin = paste0("`", labels[i], "`"),
-      ymax = paste0("`", labels[i + 1], "`"), x = "time",
-      fill = shortLabels[i]
-    ),
-    colour = ifelse(addBorder, "black", NA), alpha = 0.8
-    )
+    plot_data_list[[i]] <- plot_data[, c("time", labels[i], labels[i + 1])]
+    plot_data_list[[i]] <- plot_data_list[[i]] %>%
+      rename("lower" = labels[i], "upper" = labels[i + 1]) %>%
+      add_column(label = shortLabels[i])
   }
+  plot_data_list <- bind_rows(plot_data_list)
+
+  p <- ggplot(plot_data_list) +
+    geom_ribbon(
+      aes(
+        x = .data$time,
+        ymin = .data$lower,
+        ymax = .data$upper,
+        fill = .data$label
+      ),
+      colour = ifelse(addBorder, "black", NA), alpha = 0.8
+    )
 
   if (!is.null(col)) {
     p <- p + scale_fill_manual(values = col, drop = FALSE)
@@ -501,7 +518,7 @@ plot_pt_ribbon <- function(pt, col = NULL, addBorder = TRUE) {
 #'
 #' # compute the number of jumps
 #' nJump <- compute_number_jumps(d_JK)
-#' @seealso \link{hist.njump}
+#' @seealso \code{\link{hist.njump}}
 #' @family Descriptive statistics
 #' @author Cristian Preda, Quentin Grimonprez
 #'
@@ -561,7 +578,7 @@ compute_number_jumpsIntern <- function(x, countDuplicated = TRUE) {
 #' hist(nJump, fill = "#984EA3") +
 #'   labs(title = "Distribution of the number of jumps")
 #' @author Quentin Grimonprez
-#' @seealso \link{compute_number_jumps}
+#' @seealso \code{\link{compute_number_jumps}}
 #' @family Descriptive statistics
 #'
 #' @export
@@ -575,7 +592,7 @@ hist.njump <- function(x, breaks = NULL, ...) {
   defaultParam <- list(fill = "lightblue", color = "black", bins = breaks, center = 0)
   param <- c(extraParam, defaultParam[which(!(names(defaultParam) %in% names(extraParam)))])
 
-  ggplot(data.frame(njump = as.vector(x)), aes_string(x = "njump")) +
+  ggplot(data.frame(njump = as.vector(x)), aes(x = .data$njump)) +
     do.call(geom_histogram, param) +
     labs(x = "Number of jumps", y = "Frequency") +
     scale_x_continuous(breaks = function(x) pretty(seq(ceiling(x[1]), floor(x[2]), by = 1)))
@@ -608,6 +625,7 @@ hist.njump <- function(x, breaks = NULL, ...) {
 statetable <- function(data, removeDiagonal = FALSE) {
   ## check parameters
   checkData(data)
+  checkLogical(removeDiagonal, "removeDiagonal")
   ## end check
 
   newState <- stateToInteger(data$state)

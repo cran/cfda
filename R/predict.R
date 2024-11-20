@@ -2,7 +2,7 @@
 #'
 #' @description Predict the principal components for new trajectories
 #'
-#' @param object output of \link{compute_optimal_encoding} function.
+#' @param object output of \code{\link{compute_optimal_encoding}} function.
 #' @param newdata data.frame containing \code{id}, id of the trajectory, \code{time}, time at which a change occurs and
 #' \code{state}, associated state. All individuals must begin at the same time T0 and end at the same time Tmax
 #' (use \code{\link{cut_data}}).
@@ -50,9 +50,8 @@
 #' @author Quentin Grimonprez
 #' @export
 predict.fmca <- function(
-  object, newdata = NULL, method = c("precompute", "parallel"), verbose = TRUE,
-  nCores = max(1, ceiling(detectCores() / 2)), ...
-  ) {
+    object, newdata = NULL, method = c("precompute", "parallel"), verbose = TRUE,
+    nCores = max(1, ceiling(detectCores() / 2)), ...) {
   if (is.null(newdata)) {
     return(object$pc)
   }
@@ -60,9 +59,7 @@ predict.fmca <- function(
   ## check parameters
   checkData(newdata)
   checkLogical(verbose, "verbose")
-  if (any(is.na(nCores)) || !is.whole.number(nCores) || (nCores < 1)) {
-    stop("nCores must be an integer > 0.")
-  }
+  checkInteger(nCores, minValue = 0, paramName = "nCores")
   method <- match.arg(method)
   ##
 
