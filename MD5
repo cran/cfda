@@ -1,12 +1,12 @@
-beef2fe3b80dc4ea7cc350d5482e14ac *DESCRIPTION
+a4945eaa6a06b94aae6c11828a45bf25 *DESCRIPTION
 1d84337940d17680fe6d8f6c396b6155 *NAMESPACE
-4eac6ec21302979ed14e7ae981e22a3e *NEWS
+0d092cf797994b0b02688ed1bea8becc *NEWS
 0690dd5948a022c3c501c74d2d8d7f8d *R/bootstrap.R
 961e14aaddd7d38ca28fd1b2d87315c5 *R/cfda-package.R
 d597efba572c9cb076ee5e6e4b548b1c *R/check.R
 9d62268a02970be789a3e6e8994f0bae *R/dataPlot.R
 ba89932e371369abff43de3d5925ef55 *R/datasets.R
-8b85a490be883c9cc914464308d694a1 *R/encoding.R
+0215a5b90128f9a7c16ccdfe89b7256b *R/encoding.R
 75ad0a73353f2533a6f74effefd64145 *R/estimation.R
 62ff7769059064e35e294b36585b9580 *R/fmca.print.R
 cdf15589793610af590cb3c7804c3e94 *R/generateData.R
@@ -23,7 +23,7 @@ db1e9fdc3879e83c6b3a42eb5c241627 *data/biofam2.rda
 8a8d8946926045df4bd5c42125ca415a *inst/CITATION
 9bdd918014c2c063d9be146b9de3fb5b *inst/doc/cfda.R
 e07a822843350730077aff7ac1ff70a9 *inst/doc/cfda.Rmd
-8ffb0a2fe694cb69e2408f902793b433 *inst/doc/cfda.html
+b43d130ef79cdbba63815d911a8a8f7c *inst/doc/cfda.html
 7642534dce6f86f11dd9fcbb666033d2 *man/biofam2.Rd
 7a78b0d6251e2a858b1e888266f2e58e *man/boxplot.timeSpent.Rd
 516e4f54236da485138325ece2ac36a5 *man/care.Rd

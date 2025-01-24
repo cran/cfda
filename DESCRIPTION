@@ -1,8 +1,8 @@
 Package: cfda
 Type: Package
 Title: Categorical Functional Data Analysis
-Version: 0.12.0
-Date: 2024-11-20
+Version: 0.12.1
+Date: 2025-01-24
 Authors@R: c(person("Cristian", "Preda", role = "aut", email = "cristian.preda@inria.fr"),
              person("Quentin", "Grimonprez", role = c("aut", "cre"), email = "quentingrim@yahoo.fr"),
              person("Vincent", "Vandewalle", role = "ctb", email = "vincent.vandewalle@inria.fr"))
@@ -20,10 +20,10 @@ VignetteBuilder: knitr
 RoxygenNote: 7.3.2
 URL: https://modal-inria.github.io/cfda/
 NeedsCompilation: no
-Packaged: 2024-11-20 16:47:26 UTC; quentin
+Packaged: 2025-01-24 16:36:51 UTC; quentin
 Author: Cristian Preda [aut],
   Quentin Grimonprez [aut, cre],
   Vincent Vandewalle [ctb]
 Maintainer: Quentin Grimonprez <quentingrim@yahoo.fr>
 Repository: CRAN
-Date/Publication: 2024-11-20 17:40:02 UTC
+Date/Publication: 2025-01-24 17:20:02 UTC
